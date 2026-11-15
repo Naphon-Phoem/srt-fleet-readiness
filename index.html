@@ -1,0 +1,1347 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SRT Fleet Readiness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
+<style>
+/* Two views in one file so edits in the back office flow straight into the executive view.
+   Palette: deep rail-signal navy for structure, warm signal amber as the single accent,
+   red/green only for direction of change. */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --surface2:#EEF2F6; --fg:#132033; --muted:#5A6779; --line:#DCE2EA;
+  --brand:#14365C; --brand-fg:#FFFFFF; --brand-2:#1E4C7E; --accent:#C9741A; --accent-bg:#FCEEDD;
+  --good:#1C7A4A; --good-bg:#E2F3E9; --warn:#9A5B00; --warn-bg:#FFF1D6; --crit:#B3261E; --crit-bg:#FCE7E5;
+  --focus:#1E4C7E;
+  --c1:#1E4C7E; --c2:#C9741A; --c3:#2A8A77; --c4:#B3475F; --c5:#7A8799; --c6:#A88A2A;
+  --font:'IBM Plex Sans Thai','Noto Sans Thai','Leelawadee UI',Tahoma,system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1520; --surface:#152131; --surface2:#1B2A3D; --fg:#E6EDF5; --muted:#9CAABB; --line:#283749;
+    --brand:#0F2740; --brand-fg:#E6EDF5; --brand-2:#6FA8E0; --accent:#F0A14A; --accent-bg:#3A2A14;
+    --good:#5CC48E; --good-bg:#16352A; --warn:#E8AE55; --warn-bg:#3A2D12; --crit:#F28E86; --crit-bg:#3F1D1B;
+    --focus:#6FA8E0;
+    --c1:#6FA8E0; --c2:#F0A14A; --c3:#55C2AB; --c4:#E7788F; --c5:#9AA8BA; --c6:#D4B456;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1520; --surface:#152131; --surface2:#1B2A3D; --fg:#E6EDF5; --muted:#9CAABB; --line:#283749;
+  --brand:#0F2740; --brand-fg:#E6EDF5; --brand-2:#6FA8E0; --accent:#F0A14A; --accent-bg:#3A2A14;
+  --good:#5CC48E; --good-bg:#16352A; --warn:#E8AE55; --warn-bg:#3A2D12; --crit:#F28E86; --crit-bg:#3F1D1B;
+  --focus:#6FA8E0;
+  --c1:#6FA8E0; --c2:#F0A14A; --c3:#55C2AB; --c4:#E7788F; --c5:#9AA8BA; --c6:#D4B456;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.6}
+[hidden]{display:none!important}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+h1,h2,h3{margin:0;font-weight:600;text-wrap:balance}
+
+/* ---------- app bar ---------- */
+.bar{background:var(--brand);color:var(--brand-fg);position:sticky;top:0;z-index:30;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar-in{max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;min-height:56px;padding-block:6px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;margin-right:auto}
+.brand svg{flex:0 0 auto}
+.brand small{display:block;font-weight:400;font-size:12px;opacity:.75;line-height:1.3}
+.tabs{display:flex;gap:4px;background:rgba(255,255,255,.08);border-radius:8px;padding:3px}
+.lang{display:flex;gap:2px;background:rgba(255,255,255,.08);border-radius:8px;padding:3px;margin-left:auto}
+.lang button{border:0;background:transparent;color:var(--brand-fg);padding:6px 11px;border-radius:6px;cursor:pointer;opacity:.75;min-height:34px;font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.04em}
+.lang button[aria-pressed=true]{background:var(--surface);color:var(--fg);opacity:1}
+.tab{border:0;background:transparent;color:var(--brand-fg);padding:6px 14px;border-radius:6px;cursor:pointer;opacity:.8;min-height:34px;font-family:inherit;font-size:14px;display:inline-flex;align-items:center}
+.tab[aria-current="page"]{background:var(--surface);color:var(--fg);opacity:1;font-weight:600}
+.tab:hover{opacity:1}
+
+.wrap{max-width:1240px;margin:0 auto;padding-block:24px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:20px}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 14px;cursor:pointer;min-height:36px;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--brand-2);color:#fff;border-color:var(--brand-2);font-weight:500}
+:root[data-theme="dark"] .btn.primary{color:#0D1520}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.primary{color:#0D1520}}
+.btn.danger{color:var(--crit)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+select,input[type=text],input[type=number],input[type=search],textarea{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px;min-height:36px;max-width:100%}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px;min-width:0}
+.panel>header{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+.panel h2{font-size:17px}
+.hint{color:var(--muted);font-size:12.5px}
+.eyebrow{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.chartbox{position:relative;height:320px}
+.chartbox.tall{height:300px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.grid32{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:20px}
+@media (max-width:900px){.grid2,.grid32{grid-template-columns:minmax(0,1fr)}}
+.tmeta{color:var(--muted);font-size:12px;line-height:1.45}
+.pill{display:inline-block;font-size:12px;border-radius:999px;padding:1px 9px;white-space:nowrap}
+.pill.ok{background:var(--good-bg);color:var(--good)} .pill.flag{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--crit-bg);color:var(--crit)} .pill.na{background:var(--surface2);color:var(--muted)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:8px;z-index:80;max-width:90vw}
+
+/* ---------- executive ---------- */
+.hero{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;justify-content:space-between}
+.hero h1{font-size:30px;line-height:1.25;letter-spacing:-.01em}
+.hero .lead{font-size:16.5px;line-height:1.65;max-width:70ch;margin:10px 0 0;color:var(--fg)}
+.hero .lead b{font-weight:600}
+.hero-ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:1000px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.kpis{grid-template-columns:minmax(0,1fr)}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px 14px;min-width:0;display:flex;flex-direction:column;gap:2px;border-top:4px solid var(--kc,var(--c1))}
+.kpi-l{font-size:13px;color:var(--muted);font-weight:500}
+.kpi-row{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+.kpi-v{font-size:40px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kpi-v small{font-size:18px;font-weight:500;color:var(--muted);margin-left:2px}
+.kpi-d{font-size:13.5px;font-variant-numeric:tabular-nums;font-weight:500}
+.kpi-d.up{color:var(--good)} .kpi-d.down{color:var(--crit)} .kpi-d.flat{color:var(--muted)}
+.kpi-s{font-size:12.5px;color:var(--muted);margin-top:6px;border-top:1px solid var(--line);padding-top:8px;font-variant-numeric:tabular-nums}
+.kpi-s b{color:var(--fg);font-weight:600}
+.spark{flex:0 0 auto}
+.msgs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:900px){.msgs{grid-template-columns:minmax(0,1fr)}}
+.msg{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0;display:flex;flex-direction:column;gap:6px}
+.msg .n{font-size:13px;font-weight:600;color:var(--accent)}
+.msg h3{font-size:16px;line-height:1.45}
+.msg p{margin:0;color:var(--muted);font-size:13.5px}
+.msg p b{color:var(--fg);font-weight:600}
+.prio{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.prio th,.prio td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.prio th{font-size:12px;color:var(--muted);font-weight:600;background:var(--surface2)}
+.prio td.n,.prio th.n{text-align:right}
+.rk{display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border-radius:4px;padding:1px 7px;white-space:nowrap}
+.rk.r1{background:var(--crit-bg);color:var(--crit)} .rk.r2{background:var(--warn-bg);color:var(--warn)} .rk.r3{background:var(--surface2);color:var(--muted)}
+.trendcard{margin-top:14px;border:1px solid var(--line);border-left:4px solid var(--tc,var(--c5));border-radius:8px;padding:12px 14px;font-size:13.5px;line-height:1.65}
+.trendcard h4{margin:0 0 4px;font-size:14px;font-weight:600}
+.trendcard dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:8px 0;font-variant-numeric:tabular-nums}
+.trendcard dt{color:var(--muted)} .trendcard dd{margin:0}
+.tgt{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:10px 0 0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface2,var(--surface));font-size:13px}
+.tgt b{font-weight:600}.tgt label{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.tgt input{width:110px;min-height:32px;padding:4px 8px}.tgt button{min-height:32px;padding:4px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:pointer}
+.abbr{display:grid;gap:3px;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.abbr div{display:flex;gap:8px;min-width:0}.abbr b{flex:0 0 92px;color:var(--fg);font-weight:600}
+.method{display:flex;flex-wrap:wrap;gap:8px 24px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+.method .lnk{padding:0;font-size:12.5px}
+.legend-dots{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted)}
+.legend-dots i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+
+/* ---------- back office ---------- */
+.bo-head{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between}
+.bo-head h1{font-size:24px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:3px 10px;color:var(--muted)}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.chip.ok i{background:var(--good)} .chip.bad i{background:var(--crit)} .chip.wait i{background:var(--warn)}
+.health{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.health{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hcell{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0}
+.hcell .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+.hcell .l{font-size:12px;color:var(--muted)}
+.hcell button{all:unset;cursor:pointer;color:var(--brand-2);font-size:12px}
+.tools{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:12px}
+.tools label.ck{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:8px;max-height:min(70vh,680px)}
+.dt th{position:sticky;top:0;z-index:1}
+.dt{border-collapse:collapse;width:100%;min-width:960px;font-variant-numeric:tabular-nums}
+.dt th,.dt td{padding:7px 10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+.dt th{background:var(--surface2);font-weight:600;font-size:12px;white-space:nowrap}
+.dt th.s{cursor:pointer;user-select:none} .dt th.s:hover{color:var(--brand-2)}
+.dt td.n,.dt th.n{text-align:right}
+.dt tr.tot td{background:var(--surface2)}
+.tname{font-weight:500}
+.flagtxt{color:var(--warn);font-size:12px;margin-top:2px;max-width:440px}
+.tag{font-size:11px;background:var(--surface2);border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--muted)}
+.lnk{background:none;border:0;color:var(--brand-2);cursor:pointer;padding:2px 4px;font-size:13px}
+.lnk.danger{color:var(--crit)} .lnk.armed{background:var(--crit);color:#fff;border-radius:4px}
+.empty{padding:28px 12px;text-align:center;color:var(--muted)}
+.overlay{position:fixed;inset:0;background:rgba(8,14,22,.55);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:50}
+.modal{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:12px;width:min(740px,100%);padding:20px;display:flex;flex-direction:column;gap:12px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 12px}
+.fgrid label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);min-width:0}
+.fgrid label input,.fgrid label select{color:var(--fg);width:100%}
+.fgrid .wide{grid-column:1/-1}
+.err{color:var(--crit);font-size:13px;white-space:pre-wrap} .okmsg{color:var(--good);font-size:13px;white-space:pre-wrap}
+.mfoot{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+textarea{width:100%;min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:var(--surface2);padding:2px 5px;border-radius:4px;overflow-wrap:anywhere}
+.issues{margin:0;padding:0 4px 0 0;list-style:none;display:flex;flex-direction:column;max-height:380px;overflow:auto}
+.issues li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:start;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.issues li:last-child{border-bottom:0}
+.glossary{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 22px}
+.glossary div{display:flex;gap:10px;align-items:baseline;font-size:13px;min-width:0}
+.glossary b{flex:0 0 96px;font-weight:600}
+.glossary span{color:var(--muted);min-width:0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:6px 12px;cursor:pointer;min-height:34px}
+.seg button[aria-pressed="true"]{background:var(--surface2);font-weight:600}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{.bar,.hero-ctl,.method .lnk{display:none!important}.wrap{padding:0}.panel,.kpi,.msg{break-inside:avoid}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<nav class="bar" aria-label="เมนูหลัก">
+  <div class="bar-in">
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="1" y="1" width="26" height="26" rx="6" fill="none" stroke="currentColor" stroke-opacity=".5"/><path d="M7 19h14M9 22l-2 3M19 22l2 3M8 8h12v8H8z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="11" cy="19" r="1.4" fill="currentColor"/><circle cx="17" cy="19" r="1.4" fill="currentColor"/></svg>
+      <div>สถิติรถจักรและล้อเลื่อน<small>ข้อมูลจากรายงานประจำปี ฝ่ายการช่างกล การรถไฟแห่งประเทศไทย<br>จัดทำโดย Naphon Phoemkwamprasert · Railway Engineer at ICEGrp.</small></div>
+    </div>
+        <div class="lang" role="group" aria-label="ภาษา / Language"><button type="button" data-l="th" aria-pressed="true">TH</button><button type="button" data-l="en" aria-pressed="false">EN</button></div>
+  </div>
+</nav>
+
+<!-- ======================= EXECUTIVE VIEW ======================= -->
+<main class="wrap" id="viewExec">
+  <section class="hero">
+    <div style="min-width:0;flex:1 1 560px">
+      <div class="eyebrow" id="exEyebrow">รายงานผู้บริหาร</div>
+      <h1 id="exTitle">ความพร้อมกองรถ รฟท.</h1>
+      <p class="lead" id="exLead"></p>
+    </div>
+    <div class="hero-ctl">
+      <label class="hint" for="exYear">ปีงบประมาณ</label>
+      <select id="exYear"></select>
+      <button class="btn" type="button" id="btnFull">เต็มจอ</button>
+    </div>
+  </section>
+
+  <section class="kpis" id="exKpis" aria-label="ความพร้อมใช้รายหมวด"></section>
+
+  <section aria-labelledby="hMsgs">
+    <h2 id="hMsgs" style="font-size:17px;margin-bottom:12px">3 เรื่องที่ควรตัดสินใจ</h2>
+    <div class="msgs" id="exMsgs"></div>
+  </section>
+
+  <section class="grid32">
+    <div class="panel">
+      <header><h2>Availability รายหมวด 5 ปี</h2><span class="hint">% รถพร้อมใช้ ÷ รถที่มีใช้งาน · ไม่มีข้อมูลปี 2565</span></header>
+      <div class="chartbox" style="height:440px"><canvas id="cTrend" role="img" aria-label="กราฟเส้น Availability รายหมวด"></canvas></div>
+    </div>
+    <div class="panel">
+      <header><h2>รถที่ไม่พร้อมใช้มากที่สุด</h2><span class="hint" id="unHint"></span></header>
+      <div class="chartbox" style="height:420px"><canvas id="cUnavail" role="img" aria-label="กราฟแท่งจำนวนรถไม่พร้อมใช้แยกชนิด"></canvas></div>
+      <div class="legend-dots" id="unLegend" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="relCompare">
+      <header>
+        <h2>เปรียบเทียบแยกชนิด</h2>
+        <div class="actions">
+          <select id="exCat" aria-label="หมวดรถ"></select>
+          <div class="seg" role="group" aria-label="ตัวชี้วัด"><button type="button" data-m="av" aria-pressed="true">Availability</button><button type="button" data-m="rel" aria-pressed="false">Reliability</button></div>
+        </div>
+      </header>
+      <div class="chartbox" style="height:340px"><canvas id="cEx" role="img" aria-label="กราฟเปรียบเทียบแยกชนิดรถ"></canvas></div>
+      <p class="hint" id="exHint" style="margin:8px 0 0"></p>
+  </section>
+
+  <section class="panel">
+    <header><h2>Reliability และลำดับการซ่อมบำรุง</h2><span class="hint" id="rlYearNote"></span></header>
+    <div class="grid2">
+      <div>
+        <h3 style="font-size:14px;margin-bottom:6px">รถจักรดีเซล</h3>
+        <div class="chartbox" style="height:440px"><canvas id="qLoco" role="img" aria-label="กราฟ Availability เทียบ Reliability รถจักรดีเซล"></canvas></div>
+        <div class="tgt" data-cat="loco"><b>เป้าหมาย</b><label>Availability ≥ <input type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="ค่ากลาง" data-k="av" aria-label="เป้าหมาย Availability %"> %</label><label>Reliability ≥ <input type="number" inputmode="numeric" min="0" step="100" placeholder="ค่ากลาง" data-k="rel" aria-label="เป้าหมาย Reliability กม./ครั้ง"> กม./ครั้ง</label><button type="button" data-reset>ใช้ค่ากลาง</button></div>
+        <div class="abbr" id="keyLoco"></div>
+      </div>
+      <div>
+        <h3 style="font-size:14px;margin-bottom:6px">รถดีเซลราง</h3>
+        <div class="chartbox" style="height:440px"><canvas id="qRail" role="img" aria-label="กราฟ Availability เทียบ Reliability รถดีเซลราง"></canvas></div>
+        <div class="tgt" data-cat="rail"><b>เป้าหมาย</b><label>Availability ≥ <input type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="ค่ากลาง" data-k="av" aria-label="เป้าหมาย Availability %"> %</label><label>Reliability ≥ <input type="number" inputmode="numeric" min="0" step="100" placeholder="ค่ากลาง" data-k="rel" aria-label="เป้าหมาย Reliability กม./ครั้ง"> กม./ครั้ง</label><button type="button" data-reset>ใช้ค่ากลาง</button></div>
+        <div class="abbr" id="keyRail"></div>
+      </div>
+    </div>
+    <p class="hint" style="margin:8px 0 16px">ขนาดวง = จำนวนคัน · เส้นประ = เกณฑ์เป้าหมาย (ถ้าไม่กรอก ใช้ค่ากลางของกลุ่ม) · สีแดง = ควรดูก่อน สีเหลือง = ควรปรับรอบซ่อม</p>
+    <div style="overflow-x:auto"><table class="prio" style="min-width:760px">
+      <thead><tr><th>ลำดับ</th><th>ชนิดรถ</th><th class="n">คัน</th><th class="n">Availability</th><th class="n">Reliability (กม./ครั้ง)</th><th class="n">เทียบปีก่อน</th><th>แนวทางซ่อมบำรุง</th></tr></thead>
+      <tbody id="prioBody"></tbody>
+    </table></div>
+  </section>
+
+
+  <section class="panel" id="relTypes">
+    <header>
+      <h2>Reliability รายชนิดรถ และแนวโน้ม</h2>
+      <div class="sel" style="display:flex;gap:8px;align-items:center"><label class="hint" for="rtPick">ชนิดรถ</label><select id="rtPick" aria-label="เลือกชนิดรถ"></select></div>
+    </header>
+    <h3 id="rtTitle" style="font-size:14px;margin-bottom:6px"></h3>
+    <div class="chartbox"><canvas id="cType" role="img" aria-label="กราฟ Reliability รายปีของชนิดรถที่เลือก"></canvas></div>
+    <div id="rtDetail" class="trendcard"></div>
+    <h3 style="font-size:14px;margin:22px 0 4px">ตารางเปรียบเทียบทุกชนิด</h3>
+    <p class="hint" style="margin:0 0 8px">กม. ต่อการชำรุด 1 ครั้ง · คลิกแถวเพื่อเปลี่ยนกราฟด้านบน · รถโดยสารและรถสินค้าไม่มีข้อมูล Reliability ในรายงาน</p>
+    <div style="overflow:auto"><table class="prio" id="rtTable" style="min-width:760px"><thead id="rtHead"></thead><tbody id="rtBody"></tbody></table></div>
+    <p class="hint" style="margin:12px 0 0">เส้นประ = เส้นแนวโน้มเชิงเส้นของทุกปีที่ข้อมูลใช้ได้ (ตั้งแต่ 3 ปี) · ป้ายแนวโน้มดูจากค่าต้นช่วงถึงปลายช่วงและปีล่าสุด จึงอาจไม่ตรงกับทิศของเส้นประเสมอไป · เมื่อมีข้อมูลปี 2569 กราฟและป้ายจะคำนวณใหม่ตามข้อมูลล่าสุด<br>เกณฑ์แนวโน้ม: เปลี่ยนเฉลี่ยต่อปี ≤ −10% = ลดลง (ลดลงต่อเนื่องถ้าตกทุกปี) · ≥ +10% = ดีขึ้น · ปีล่าสุดตกจากปีก่อน ≥ 25% = ปีล่าสุดตกแรง · สูงสุด÷ต่ำสุด > 1.8 เท่า = ผันผวนสูง · นอกนั้นทรงตัว ใช้เฉพาะปีที่ข้อมูลใช้ได้ ปี 2567 ของรถจักรตรวจสอบข้อมูลจึงไม่นำมาคิด (* ค่าสูงกว่าปีอื่น 10–100 เท่า)</p>
+  </section>
+
+
+  
+
+  <footer class="method" id="exMethod"></footer>
+</main>
+
+<!-- ======================= BACK OFFICE VIEW ======================= -->
+
+
+<!-- row form -->
+
+<!-- import -->
+
+
+
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+  /* ================= constants ================= */
+  var EMBED = [{"year": 2564, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "CSR", "full": "", "rt": "รายการ", "num": 20, "av": 84.25, "ready": 16.85, "rel": 45046.04, "amin": 6, "amax": 6, "flag": "", "note": "", "avr": 84.27, "seq": 1}, {"year": 2564, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "GEA", "full": "", "rt": "รายการ", "num": 36, "av": 74.78, "ready": 26.92, "rel": 10736.83, "amin": 25, "amax": 25, "flag": "", "note": "", "avr": null, "seq": 2}, {"year": 2564, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "HID", "full": "", "rt": "รายการ", "num": 21, "av": 74.81, "ready": 15.71, "rel": 20575.16, "amin": 28, "amax": 28, "flag": "", "note": "", "avr": 74.79, "seq": 3}, {"year": 2564, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "ALS", "full": "", "rt": "รายการ", "num": 97, "av": 74.26, "ready": 72.03, "rel": 14020.96, "amin": 36, "amax": 47, "flag": "", "note": "", "avr": null, "seq": 4}, {"year": 2564, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "GE", "full": "", "rt": "รายการ", "num": 45, "av": 73.84, "ready": 33.23, "rel": 14110.24, "amin": 53, "amax": 57, "flag": "", "note": "", "avr": 73.86, "seq": 5}, {"year": 2564, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "รวมรถจักรดีเซลทำขบวน", "full": "Locomotives for train operation", "rt": "ยอดรวมตามรายงาน", "num": 219, "av": 75.23, "ready": 164.75, "rel": 15922.31, "amin": 6, "amax": 57, "flag": "", "note": "", "avr": 75.22, "seq": 6}, {"year": 2564, "cat": "รถจักรดีเซล", "sub": "สับเปลี่ยน", "type": "รถจักรสับเปลี่ยน", "full": "Locomotives for shunting", "rt": "รายการ", "num": 17, "av": 35.29, "ready": 6.0, "rel": null, "amin": 35, "amax": 69, "flag": "", "note": "", "avr": null, "seq": 7}, {"year": 2564, "cat": "รถดีเซลราง", "sub": "ไม่ปรับอากาศ", "type": "Hi-Renovate", "full": "", "rt": "รายการ", "num": 58, "av": 71.45, "ready": 41.44, "rel": null, "amin": 50, "amax": 54, "flag": "", "note": "", "avr": null, "seq": 8}, {"year": 2564, "cat": "รถดีเซลราง", "sub": "ไม่ปรับอากาศ", "type": "THN./NKF.", "full": "", "rt": "รายการ", "num": 101, "av": 82.75, "ready": 83.58, "rel": 180744.95, "amin": 36, "amax": 38, "flag": "", "note": "", "avr": null, "seq": 9}, {"year": 2564, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "ATR", "full": "", "rt": "รายการ", "num": 11, "av": 86.91, "ready": 9.56, "rel": 74920.6, "amin": 36, "amax": 36, "flag": "", "note": "", "avr": 86.89, "seq": 10}, {"year": 2564, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "ASR", "full": "", "rt": "รายการ", "num": 17, "av": 34.9, "ready": 5.9324, "rel": null, "amin": 30, "amax": 30, "flag": "", "note": "", "avr": null, "seq": 11}, {"year": 2564, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "APD./APN.20", "full": "", "rt": "รายการ", "num": 39, "av": 71.67, "ready": 27.95, "rel": 47146.64, "amin": 25, "amax": 25, "flag": "", "note": "", "avr": 71.66, "seq": 12}, {"year": 2564, "cat": "รถดีเซลราง", "sub": "ไม่ปรับอากาศ", "type": "รวมดีเซลรางธรรมดา", "full": "Total", "rt": "ยอดรวมตามรายงาน", "num": 159, "av": 78.63, "ready": 125.02, "rel": 180744.95, "amin": 36, "amax": 54, "flag": "", "note": "", "avr": null, "seq": 13}, {"year": 2564, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "รวมดีเซลรางปรับอากาศ", "full": "Total", "rt": "ยอดรวมตามรายงาน", "num": 67, "av": 64.84, "ready": 43.44, "rel": 49413.63, "amin": 25, "amax": 36, "flag": "", "note": "", "avr": 64.83, "seq": 14}, {"year": 2564, "cat": "รถดีเซลราง", "sub": "ทั้งหมด", "type": "รวมรถดีเซลรางทั้งสิ้น", "full": "Total", "rt": "ยอดรวมตามรายงาน", "num": 226, "av": 74.54, "ready": 168.46, "rel": 91706.76, "amin": 25, "amax": 54, "flag": "", "note": "", "avr": null, "seq": 15}, {"year": 2564, "cat": "รถโดยสาร", "sub": "8 ล้อ-ปรับอากาศ", "type": "A.N.F.", "full": "Air-Conditioned First Class (A.N.F.)", "rt": "รายการ", "num": 31, "av": 78.87, "ready": 24.45, "rel": null, "amin": 5, "amax": 44, "flag": "", "note": "", "avr": null, "seq": 16}, {"year": 2564, "cat": "รถโดยสาร", "sub": "8 ล้อ-ปรับอากาศ", "type": "A.N.S.", "full": "Air-Conditioned Second Class (A.N.S., A.S.C.)", "rt": "รายการ", "num": 283, "av": 78.16, "ready": 221.18, "rel": null, "amin": 5, "amax": 62, "flag": "", "note": "", "avr": null, "seq": 17}, {"year": 2564, "cat": "รถโดยสาร", "sub": "8 ล้อ-ไม่ปรับอากาศ", "type": "B.N.S.", "full": "Bogie Second Class (B.N.S., B.S.C., B.S.V.)", "rt": "รายการ", "num": 116, "av": 61.75, "ready": 71.63, "rel": null, "amin": 38, "amax": 72, "flag": "", "note": "", "avr": null, "seq": 18}, {"year": 2564, "cat": "รถโดยสาร", "sub": "8 ล้อ-ปรับอากาศ", "type": "A.T.C.", "full": "Air-Conditioned Third Class (A.T.C.)", "rt": "รายการ", "num": 5, "av": 62.6, "ready": 3.13, "rel": null, "amin": 42, "amax": 44, "flag": "", "note": "", "avr": 62.64, "seq": 19}, {"year": 2564, "cat": "รถโดยสาร", "sub": "8 ล้อ-ไม่ปรับอากาศ", "type": "B.T.C.", "full": "Bogie Third Class (B.T.C., B.S.T., B.T.V.)", "rt": "รายการ", "num": 651, "av": 79.51, "ready": 517.61, "rel": null, "amin": 40, "amax": 104, "flag": "", "note": "", "avr": null, "seq": 20}, {"year": 2564, "cat": "รถโดยสาร", "sub": "8 ล้อ-อื่นๆ", "type": "รถชนิดอื่นๆ", "full": "Other Coaches", "rt": "รายการ", "num": 199, "av": 83.92, "ready": 167.0, "rel": null, "amin": 2, "amax": 106, "flag": "", "note": "", "avr": null, "seq": 21}, {"year": 2564, "cat": "รถโดยสาร", "sub": "8 ล้อ-อื่นๆ", "type": "รวมรถโดยสาร 8 ล้อ", "full": "Total 8-wheeled Passenger Coach", "rt": "ยอดรวมตามรายงาน", "num": 1285, "av": 78.21, "ready": 1005.01, "rel": null, "amin": 2, "amax": 106, "flag": "", "note": "", "avr": null, "seq": 22}, {"year": 2564, "cat": "รถโดยสาร", "sub": "4 ล้อ", "type": "รถโดยสาร 4 ล้อ", "full": "4-wheeled Bogie Reserved Saloon", "rt": "รายการ", "num": 1, "av": 100, "ready": 1, "rel": null, "amin": 108, "amax": 108, "flag": "", "note": "", "avr": null, "seq": 23}, {"year": 2564, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.C.F.", "full": "Bogie Container Flat Wagon (B.C.F.)", "rt": "รายการ", "num": 1300, "av": 90.05, "ready": 1170.61, "rel": null, "amin": 4, "amax": 91, "flag": "", "note": "", "avr": null, "seq": 24}, {"year": 2564, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.G.T.", "full": "Bogie LPG Tank Wagon (B.G.T.)", "rt": "รายการ", "num": 90, "av": 95.62, "ready": 86.06, "rel": null, "amin": 24, "amax": 35, "flag": "", "note": "", "avr": null, "seq": 25}, {"year": 2564, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.O.T.", "full": "Bogie Oil-Tank Wagon (B.O.T.)", "rt": "รายการ", "num": 887, "av": 82.82, "ready": 734.59, "rel": null, "amin": 26, "amax": 83, "flag": "", "note": "", "avr": null, "seq": 26}, {"year": 2564, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.C.G.", "full": "Bogie Covered Goods Wagon (B.C.G.)", "rt": "รายการ", "num": 254, "av": 82.16, "ready": 208.69, "rel": null, "amin": 31, "amax": 48, "flag": "", "note": "", "avr": null, "seq": 27}, {"year": 2564, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.B.V.", "full": "Bogie Brake Van (B.B.V.)", "rt": "รายการ", "num": 28, "av": 99.93, "ready": 27.98, "rel": null, "amin": 38, "amax": 53, "flag": "", "note": "", "avr": 99.94, "seq": 28}, {"year": 2564, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "สินค้า 8 ล้อ อื่นๆ", "full": "Other 8-wheeled freight wagon", "rt": "รายการ", "num": 596, "av": 76.85, "ready": 458, "rel": null, "amin": 7, "amax": 94, "flag": "", "note": "", "avr": 76.79, "seq": 29}, {"year": 2564, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "รวมรถสินค้า 8 ล้อ", "full": "Total freight wagon (8-wheeled)", "rt": "ยอดรวมตามรายงาน", "num": 3155, "av": 85.12, "ready": 2685.62, "rel": null, "amin": 4, "amax": 94, "flag": "", "note": "", "avr": null, "seq": 30}, {"year": 2564, "cat": "รถสินค้า", "sub": "12 ล้อ", "type": "รถสินค้า 12 ล้อ", "full": "12-wheeled freight wagon", "rt": "รายการ", "num": 5, "av": 100, "ready": 5, "rel": null, "amin": 53, "amax": 53, "flag": "", "note": "", "avr": null, "seq": 31}, {"year": 2564, "cat": "รถสินค้า", "sub": "4 ล้อ", "type": "รถสินค้า 4 ล้อ", "full": "4-wheeled freight wagon", "rt": "รายการ", "num": 59, "av": 74.31, "ready": 43.84, "rel": null, "amin": 33, "amax": 93, "flag": "", "note": "", "avr": null, "seq": 32}, {"year": 2566, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "QSY", "full": "", "rt": "รายการ", "num": 50, "av": 90.88, "ready": 45.44, "rel": 144951.14, "amin": 0, "amax": 1, "flag": "", "note": "", "avr": null, "seq": 33}, {"year": 2566, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "CSR", "full": "", "rt": "รายการ", "num": 20, "av": 30.05, "ready": 6.01, "rel": 75231.75, "amin": 8, "amax": 8, "flag": "", "note": "", "avr": null, "seq": 34}, {"year": 2566, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "GEA", "full": "", "rt": "รายการ", "num": 36, "av": 81.08, "ready": 29.19, "rel": 5526.76, "amin": 27, "amax": 27, "flag": "", "note": "", "avr": 81.09, "seq": 35}, {"year": 2566, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "HID", "full": "", "rt": "รายการ", "num": 21, "av": 72.05, "ready": 15.13, "rel": 13984.9, "amin": 30, "amax": 30, "flag": "", "note": "", "avr": 72.03, "seq": 36}, {"year": 2566, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "ALS", "full": "", "rt": "รายการ", "num": 97, "av": 66.64, "ready": 64.64, "rel": 8462.4, "amin": 38, "amax": 49, "flag": "", "note": "", "avr": null, "seq": 37}, {"year": 2566, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "GE", "full": "", "rt": "รายการ", "num": 45, "av": 68.31, "ready": 30.74, "rel": 14234.12, "amin": 56, "amax": 59, "flag": "", "note": "", "avr": null, "seq": 38}, {"year": 2566, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "รวมรถจักรดีเซลทำขบวน", "full": "Locomotives for train operation", "rt": "ยอดรวมตามรายงาน", "num": 269, "av": 71.06, "ready": 191.15, "rel": 13387.29, "amin": 1, "amax": 59, "flag": "", "note": "", "avr": 69.73, "seq": 39}, {"year": 2566, "cat": "รถจักรดีเซล", "sub": "สับเปลี่ยน", "type": "รถจักรสับเปลี่ยน", "full": "Locomotives for shunting", "rt": "รายการ", "num": 17, "av": 41.12, "ready": 6.99, "rel": null, "amin": 38, "amax": 71, "flag": "", "note": "", "avr": 41.18, "seq": 40}, {"year": 2566, "cat": "รถดีเซลราง", "sub": "ไม่ปรับอากาศ", "type": "Hi-Renovate", "full": "", "rt": "รายการ", "num": 58, "av": 71.45, "ready": 41.44, "rel": null, "amin": 52, "amax": 56, "flag": "", "note": "", "avr": null, "seq": 41}, {"year": 2566, "cat": "รถดีเซลราง", "sub": "ไม่ปรับอากาศ", "type": "THN./NKF.", "full": "", "rt": "รายการ", "num": 101, "av": 83.31, "ready": 84.14, "rel": 294760.6, "amin": 38, "amax": 40, "flag": "", "note": "", "avr": 83.3, "seq": 42}, {"year": 2566, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "ATR", "full": "", "rt": "รายการ", "num": 11, "av": 86.09, "ready": 9.47, "rel": 170646.5, "amin": 38, "amax": 38, "flag": "", "note": "", "avr": 86.05, "seq": 43}, {"year": 2566, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "ASR", "full": "", "rt": "รายการ", "num": 17, "av": 31.59, "ready": 5.37, "rel": null, "amin": 32, "amax": 32, "flag": "", "note": "", "avr": null, "seq": 44}, {"year": 2566, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "APD./APN.20", "full": "", "rt": "รายการ", "num": 39, "av": 66.69, "ready": 26.01, "rel": 40662.11, "amin": 27, "amax": 27, "flag": "", "note": "", "avr": 66.7, "seq": 45}, {"year": 2566, "cat": "รถดีเซลราง", "sub": "ไม่ปรับอากาศ", "type": "รวมดีเซลรางธรรมดา", "full": "Total", "rt": "ยอดรวมตามรายงาน", "num": 159, "av": 76.47, "ready": 121.58, "rel": 180744.95, "amin": 38, "amax": 56, "flag": "", "note": "", "avr": 76.46, "seq": 46}, {"year": 2566, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "รวมดีเซลรางปรับอากาศ", "full": "Total", "rt": "ยอดรวมตามรายงาน", "num": 67, "av": 64.84, "ready": 43.44, "rel": 49413.63, "amin": 27, "amax": 38, "flag": "", "note": "", "avr": 64.83, "seq": 47}, {"year": 2566, "cat": "รถดีเซลราง", "sub": "ทั้งหมด", "type": "รวมรถดีเซลรางทั้งสิ้น", "full": "Total", "rt": "ยอดรวมตามรายงาน", "num": 226, "av": 74.54, "ready": 168.46, "rel": 91706.76, "amin": 27, "amax": 56, "flag": "", "note": "", "avr": null, "seq": 48}, {"year": 2566, "cat": "รถโดยสาร", "sub": "8 ล้อ-ปรับอากาศ", "type": "A.N.F.", "full": "Air-Conditioned First Class (A.N.F.)", "rt": "รายการ", "num": 31, "av": 83.87, "ready": 26.0, "rel": null, "amin": 7, "amax": 46, "flag": "", "note": "", "avr": null, "seq": 49}, {"year": 2566, "cat": "รถโดยสาร", "sub": "8 ล้อ-ปรับอากาศ", "type": "A.N.S.", "full": "Air-Conditioned Second Class (A.N.S., A.S.C.)", "rt": "รายการ", "num": 283, "av": 76.33, "ready": 216.02, "rel": null, "amin": 7, "amax": 64, "flag": "", "note": "", "avr": null, "seq": 50}, {"year": 2566, "cat": "รถโดยสาร", "sub": "8 ล้อ-ไม่ปรับอากาศ", "type": "B.N.S.", "full": "Bogie Second Class (B.N.S., B.S.C., B.S.V.)", "rt": "รายการ", "num": 89, "av": 71.31, "ready": 63.47, "rel": null, "amin": 40, "amax": 74, "flag": "", "note": "", "avr": null, "seq": 51}, {"year": 2566, "cat": "รถโดยสาร", "sub": "8 ล้อ-ปรับอากาศ", "type": "A.T.C.", "full": "Air-Conditioned Third Class (A.T.C.)", "rt": "รายการ", "num": 5, "av": 56.8, "ready": 2.84, "rel": null, "amin": 44, "amax": 46, "flag": "", "note": "", "avr": 56.9, "seq": 52}, {"year": 2566, "cat": "รถโดยสาร", "sub": "8 ล้อ-ไม่ปรับอากาศ", "type": "B.T.C.", "full": "Bogie Third Class (B.T.C., B.S.T., B.T.V.)", "rt": "รายการ", "num": 651, "av": 79.42, "ready": 517.05, "rel": null, "amin": 42, "amax": 108, "flag": "", "note": "", "avr": 79.85, "seq": 53}, {"year": 2566, "cat": "รถโดยสาร", "sub": "8 ล้อ-อื่นๆ", "type": "รถชนิดอื่นๆ", "full": "Other Bogies", "rt": "รายการ", "num": 228, "av": 82.83, "ready": 188.86, "rel": null, "amin": 4, "amax": 108, "flag": "", "note": "", "avr": null, "seq": 54}, {"year": 2566, "cat": "รถโดยสาร", "sub": "8 ล้อ-อื่นๆ", "type": "รวมรถโดยสาร 8 ล้อ", "full": "Total 8-wheeled Passenger Coach", "rt": "ยอดรวมตามรายงาน", "num": 1287, "av": 78.81, "ready": 1014.25, "rel": null, "amin": 4, "amax": 108, "flag": "", "note": "", "avr": null, "seq": 55}, {"year": 2566, "cat": "รถโดยสาร", "sub": "4 ล้อ", "type": "รถโดยสาร 4 ล้อ", "full": "4-wheeled Bogie Reserved Saloon", "rt": "รายการ", "num": 1, "av": 100, "ready": 1, "rel": null, "amin": 108, "amax": 108, "flag": "", "note": "", "avr": null, "seq": 56}, {"year": 2566, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.C.F.", "full": "Bogie Container Flat Wagon (B.C.F.)", "rt": "รายการ", "num": 1300, "av": 68.81, "ready": 894.55, "rel": null, "amin": 6, "amax": 93, "flag": "", "note": "", "avr": null, "seq": 57}, {"year": 2566, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.G.T.", "full": "Bogie LPG Tank Wagon (B.G.T.)", "rt": "รายการ", "num": 90, "av": 71.38, "ready": 64.24, "rel": null, "amin": 26, "amax": 37, "flag": "", "note": "", "avr": null, "seq": 58}, {"year": 2566, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.O.T.", "full": "Bogie Oil-Tank Wagon (B.O.T.)", "rt": "รายการ", "num": 887, "av": 73.91, "ready": 655.62, "rel": null, "amin": 28, "amax": 85, "flag": "", "note": "", "avr": null, "seq": 59}, {"year": 2566, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.C.G.", "full": "Bogie Covered Goods Wagon (B.C.G.)", "rt": "รายการ", "num": 254, "av": 75.95, "ready": 192.92, "rel": null, "amin": 33, "amax": 50, "flag": "", "note": "", "avr": null, "seq": 60}, {"year": 2566, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.B.V.", "full": "Bogie Brake Van (B.B.V.)", "rt": "รายการ", "num": 28, "av": 65.79, "ready": 18.42, "rel": null, "amin": 40, "amax": 55, "flag": "", "note": "", "avr": 65.78, "seq": 61}, {"year": 2566, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "สินค้า 8 ล้อ อื่นๆ", "full": "Other 8-wheeled freight wagon", "rt": "รายการ", "num": 595, "av": 65.2, "ready": 387.95, "rel": null, "amin": 9, "amax": 96, "flag": "", "note": "", "avr": null, "seq": 62}, {"year": 2566, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "รวมรถสินค้า 8 ล้อ", "full": "Total freight wagon (8-wheeled)", "rt": "ยอดรวมตามรายงาน", "num": 3154, "av": 70.19, "ready": 2213.7, "rel": null, "amin": 6, "amax": 96, "flag": "", "note": "", "avr": null, "seq": 63}, {"year": 2566, "cat": "รถสินค้า", "sub": "12 ล้อ", "type": "รถสินค้า 12 ล้อ", "full": "12-wheeled freight wagon", "rt": "รายการ", "num": 4, "av": 100, "ready": 5, "rel": null, "amin": 55, "amax": 55, "flag": "", "note": "", "avr": null, "seq": 64}, {"year": 2566, "cat": "รถสินค้า", "sub": "4 ล้อ", "type": "รถสินค้า 4 ล้อ", "full": "4-wheeled freight wagon", "rt": "รายการ", "num": 59, "av": 47.81, "ready": 28.21, "rel": null, "amin": 35, "amax": 95, "flag": "", "note": "", "avr": null, "seq": 65}, {"year": 2567, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "QSY", "full": "", "rt": "รายการ", "num": 50, "av": 88.0, "ready": 44, "rel": 9510155, "amin": 2, "amax": 2, "flag": "สเกล", "note": "", "avr": 87.94, "seq": 66}, {"year": 2567, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "CSR", "full": "", "rt": "รายการ", "num": 20, "av": 15.0, "ready": 3, "rel": 577517, "amin": 9, "amax": 9, "flag": "สเกล", "note": "", "avr": 16.79, "seq": 67}, {"year": 2567, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "GEA", "full": "", "rt": "รายการ", "num": 36, "av": 77.78, "ready": 28, "rel": 1906660, "amin": 28, "amax": 28, "flag": "สเกล", "note": "", "avr": 77.67, "seq": 68}, {"year": 2567, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "HID", "full": "", "rt": "รายการ", "num": 21, "av": 57.14, "ready": 12, "rel": 1103560, "amin": 31, "amax": 31, "flag": "สเกล", "note": "", "avr": 58.51, "seq": 69}, {"year": 2567, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "ALS", "full": "", "rt": "รายการ", "num": 97, "av": 68.04, "ready": 66, "rel": 5527609, "amin": 39, "amax": 50, "flag": "สเกล", "note": "", "avr": 68.05, "seq": 70}, {"year": 2567, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "GE", "full": "", "rt": "รายการ", "num": 42, "av": 59.52, "ready": 25, "rel": 588436, "amin": 57, "amax": 60, "flag": "สเกล", "note": "", "avr": 60.7, "seq": 71}, {"year": 2567, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "รวมรถจักรดีเซลทำขบวน", "full": "Locomotives for train operation", "rt": "ยอดรวมตามรายงาน", "num": 266, "av": 67.29, "ready": 179, "rel": 3202323, "amin": 1, "amax": 60, "flag": "สเกล", "note": "", "avr": 67.32, "seq": 72}, {"year": 2567, "cat": "รถจักรดีเซล", "sub": "สับเปลี่ยน", "type": "รถจักรสับเปลี่ยน", "full": "Locomotives for shunting", "rt": "รายการ", "num": 12, "av": 41.67, "ready": 5, "rel": null, "amin": 38, "amax": 72, "flag": "", "note": "", "avr": 78.27, "seq": 73}, {"year": 2567, "cat": "รถดีเซลราง", "sub": "ไม่ปรับอากาศ", "type": "Hi-Renovate", "full": "", "rt": "รายการ", "num": 58, "av": 70.69, "ready": 41, "rel": null, "amin": 53, "amax": 57, "flag": "", "note": "", "avr": 71.45, "seq": 74}, {"year": 2567, "cat": "รถดีเซลราง", "sub": "ไม่ปรับอากาศ", "type": "THN./NKF.", "full": "", "rt": "รายการ", "num": 101, "av": 82.18, "ready": 83, "rel": 320494.5, "amin": 39, "amax": 41, "flag": "", "note": "", "avr": null, "seq": 75}, {"year": 2567, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "ATR", "full": "", "rt": "รายการ", "num": 11, "av": 81.82, "ready": 9, "rel": 78955.46, "amin": 39, "amax": 39, "flag": "", "note": "", "avr": null, "seq": 76}, {"year": 2567, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "ASR", "full": "", "rt": "รายการ", "num": 17, "av": 23.53, "ready": 4, "rel": 114827.0, "amin": 33, "amax": 33, "flag": "", "note": "", "avr": 24.53, "seq": 77}, {"year": 2567, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "APD./APN.20", "full": "", "rt": "รายการ", "num": 39, "av": 74.36, "ready": 29, "rel": 77744.56, "amin": 28, "amax": 28, "flag": "", "note": "", "avr": 74.12, "seq": 78}, {"year": 2567, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "KIHA.183", "full": "", "rt": "รายการ", "num": 17, "av": 100.0, "ready": 17, "rel": null, "amin": 0, "amax": 1, "flag": "", "note": "", "avr": null, "seq": 79}, {"year": 2567, "cat": "รถดีเซลราง", "sub": "ไม่ปรับอากาศ", "type": "รวมดีเซลรางธรรมดา", "full": "Total", "rt": "ยอดรวมตามรายงาน", "num": 159, "av": 77.99, "ready": 124, "rel": null, "amin": null, "amax": null, "flag": "", "note": "", "avr": 78.27, "seq": 80}, {"year": 2567, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "รวมดีเซลรางปรับอากาศ", "full": "Total", "rt": "ยอดรวมตามรายงาน", "num": 84, "av": 70.24, "ready": 59, "rel": null, "amin": 0, "amax": 58, "flag": "", "note": "", "avr": 70.33, "seq": 81}, {"year": 2567, "cat": "รถดีเซลราง", "sub": "ทั้งหมด", "type": "รวมรถดีเซลรางทั้งสิ้น", "full": "Total", "rt": "ยอดรวมตามรายงาน", "num": 243, "av": 75.31, "ready": 183, "rel": null, "amin": null, "amax": null, "flag": "", "note": "", "avr": 72.38, "seq": 82}, {"year": 2567, "cat": "รถโดยสาร", "sub": "8 ล้อ-ปรับอากาศ", "type": "A.N.F.", "full": "Air-Conditioned First Class (A.N.F.)", "rt": "รายการ", "num": 31, "av": 83.87, "ready": 26, "rel": null, "amin": 8, "amax": 47, "flag": "", "note": "", "avr": 84.83, "seq": 83}, {"year": 2567, "cat": "รถโดยสาร", "sub": "8 ล้อ-ปรับอากาศ", "type": "A.N.S.", "full": "Air-Conditioned Second Class (A.N.S., A.S.C.)", "rt": "รายการ", "num": 283, "av": 81.98, "ready": 232, "rel": null, "amin": 8, "amax": 65, "flag": "", "note": "", "avr": 83.76, "seq": 84}, {"year": 2567, "cat": "รถโดยสาร", "sub": "8 ล้อ-ไม่ปรับอากาศ", "type": "B.N.S.", "full": "Bogie Second Class (B.N.S., B.S.C., B.S.V.)", "rt": "รายการ", "num": 88, "av": 77.27, "ready": 68, "rel": null, "amin": 41, "amax": 75, "flag": "", "note": "", "avr": 58.93, "seq": 85}, {"year": 2567, "cat": "รถโดยสาร", "sub": "8 ล้อ-ปรับอากาศ", "type": "A.T.C.", "full": "Air-Conditioned Third Class (A.T.C.)", "rt": "รายการ", "num": 5, "av": 60.0, "ready": 3, "rel": null, "amin": 45, "amax": 47, "flag": "", "note": "", "avr": 58.22, "seq": 86}, {"year": 2567, "cat": "รถโดยสาร", "sub": "8 ล้อ-ไม่ปรับอากาศ", "type": "B.T.C.", "full": "Bogie Third Class (B.T.C., B.S.T., B.T.V.)", "rt": "รายการ", "num": 648, "av": 82.87, "ready": 537, "rel": null, "amin": 43, "amax": 108, "flag": "", "note": "", "avr": 80.42, "seq": 87}, {"year": 2567, "cat": "รถโดยสาร", "sub": "8 ล้อ-อื่นๆ", "type": "รถชนิดอื่นๆ", "full": "Other Bogies", "rt": "รายการ", "num": 229, "av": 83.84, "ready": 192, "rel": null, "amin": 4, "amax": 108, "flag": "", "note": "", "avr": 82.83, "seq": 88}, {"year": 2567, "cat": "รถโดยสาร", "sub": "8 ล้อ-อื่นๆ", "type": "รวมรถโดยสาร 8 ล้อ", "full": "Total 8-wheeled Passenger Coach", "rt": "ยอดรวมตามรายงาน", "num": 1284, "av": 82.4, "ready": 1058, "rel": null, "amin": 4, "amax": 108, "flag": "", "note": "", "avr": 82.36, "seq": 89}, {"year": 2567, "cat": "รถโดยสาร", "sub": "4 ล้อ", "type": "รถโดยสาร 4 ล้อ", "full": "4-wheeled Bogie Reserved Saloon", "rt": "รายการ", "num": 1, "av": 100, "ready": 1, "rel": null, "amin": 111, "amax": 111, "flag": "", "note": "", "avr": null, "seq": 90}, {"year": 2567, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.C.F.", "full": "Bogie Container Flat Wagon (B.C.F.)", "rt": "รายการ", "num": 1250, "av": 75.28, "ready": 941, "rel": null, "amin": 7, "amax": 97, "flag": "", "note": "", "avr": 75.32, "seq": 91}, {"year": 2567, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.G.T.", "full": "Bogie LPG Tank Wagon (B.G.T.)", "rt": "รายการ", "num": 126, "av": 61.11, "ready": 77, "rel": null, "amin": 27, "amax": 38, "flag": "", "note": "", "avr": 85.68, "seq": 92}, {"year": 2567, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.O.T.", "full": "Bogie Oil-Tank Wagon (B.O.T.)", "rt": "รายการ", "num": 796, "av": 81.28, "ready": 647, "rel": null, "amin": 29, "amax": 86, "flag": "", "note": "", "avr": 81.31, "seq": 93}, {"year": 2567, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.C.G.", "full": "Bogie Covered Goods Wagon (B.C.G.)", "rt": "รายการ", "num": 240, "av": 81.25, "ready": 195, "rel": null, "amin": 34, "amax": 51, "flag": "", "note": "", "avr": 81.35, "seq": 94}, {"year": 2567, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.B.V.", "full": "Bogie Brake Van (B.B.V.)", "rt": "รายการ", "num": 28, "av": 67.86, "ready": 19, "rel": null, "amin": 41, "amax": 56, "flag": "", "note": "", "avr": 68.75, "seq": 95}, {"year": 2567, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "สินค้า 8 ล้อ อื่นๆ", "full": "Other 8-wheeled freight wagon", "rt": "รายการ", "num": 456, "av": null, "ready": null, "rel": null, "amin": 9, "amax": 96, "flag": "", "note": "", "avr": null, "seq": 96}, {"year": 2567, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "รวมรถสินค้า 8 ล้อ", "full": "Total freight wagon (8-wheeled)", "rt": "ยอดรวมตามรายงาน", "num": 2896, "av": 76.59, "ready": 2218, "rel": null, "amin": 6, "amax": 96, "flag": "", "note": "", "avr": null, "seq": 97}, {"year": 2567, "cat": "รถสินค้า", "sub": "12 ล้อ", "type": "รถสินค้า 12 ล้อ", "full": "12-wheeled freight wagon", "rt": "รายการ", "num": 2, "av": 100, "ready": 2, "rel": null, "amin": 55, "amax": 55, "flag": "", "note": "", "avr": null, "seq": 98}, {"year": 2567, "cat": "รถสินค้า", "sub": "4 ล้อ", "type": "รถสินค้า 4 ล้อ", "full": "4-wheeled freight wagon", "rt": "รายการ", "num": 31, "av": 32.26, "ready": 10, "rel": null, "amin": 36, "amax": 96, "flag": "", "note": "", "avr": 32.61, "seq": 99}, {"year": 2568, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "QSY", "full": "", "rt": "รายการ", "num": 50, "av": 88.0, "ready": 44, "rel": 148257, "amin": 2, "amax": 3, "flag": "", "note": "", "avr": 87.78, "seq": 100}, {"year": 2568, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "CSR", "full": "", "rt": "รายการ", "num": 20, "av": 25.0, "ready": 5, "rel": 21267, "amin": 10, "amax": 10, "flag": "", "note": "", "avr": 24.75, "seq": 101}, {"year": 2568, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "GEA", "full": "", "rt": "รายการ", "num": 36, "av": 75.0, "ready": 27, "rel": 8087, "amin": 29, "amax": 29, "flag": "", "note": "", "avr": 74.79, "seq": 102}, {"year": 2568, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "HID", "full": "", "rt": "รายการ", "num": 21, "av": 66.67, "ready": 14, "rel": 11500, "amin": 32, "amax": 32, "flag": "", "note": "", "avr": 64.3, "seq": 103}, {"year": 2568, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "ALS", "full": "", "rt": "รายการ", "num": 97, "av": 64.95, "ready": 63, "rel": 36802, "amin": 40, "amax": 51, "flag": "", "note": "", "avr": 67.67, "seq": 104}, {"year": 2568, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "GE", "full": "", "rt": "รายการ", "num": 42, "av": 57.14, "ready": 24, "rel": 11530, "amin": 58, "amax": 61, "flag": "", "note": "", "avr": 57.19, "seq": 105}, {"year": 2568, "cat": "รถจักรดีเซล", "sub": "ขบวนรถ", "type": "รวมรถจักรดีเซลทำขบวน", "full": "Locomotives for train operation", "rt": "ยอดรวมตามรายงาน", "num": 266, "av": 66.54, "ready": 177, "rel": 18161.97, "amin": 2, "amax": 61, "flag": "", "note": "", "avr": null, "seq": 106}, {"year": 2568, "cat": "รถจักรดีเซล", "sub": "สับเปลี่ยน", "type": "รถจักรสับเปลี่ยน", "full": "Locomotives for shunting", "rt": "รายการ", "num": 13, "av": 38.46, "ready": 5, "rel": null, "amin": 38, "amax": 72, "flag": "", "note": "", "avr": null, "seq": 107}, {"year": 2568, "cat": "รถดีเซลราง", "sub": "ไม่ปรับอากาศ", "type": "Hi-Renovate", "full": "", "rt": "รายการ", "num": 58, "av": 70.69, "ready": 41, "rel": null, "amin": 54, "amax": 58, "flag": "", "note": "", "avr": 71.45, "seq": 108}, {"year": 2568, "cat": "รถดีเซลราง", "sub": "ไม่ปรับอากาศ", "type": "THN./NKF.", "full": "", "rt": "รายการ", "num": 101, "av": 78.22, "ready": 79, "rel": 177578, "amin": 40, "amax": 42, "flag": "", "note": "", "avr": 77.88, "seq": 109}, {"year": 2568, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "ATR", "full": "", "rt": "รายการ", "num": 11, "av": 81.82, "ready": 9, "rel": 43988, "amin": 30, "amax": 30, "flag": "", "note": "", "avr": 81.14, "seq": 110}, {"year": 2568, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "ASR", "full": "", "rt": "รายการ", "num": 17, "av": 29.41, "ready": 5, "rel": 40579, "amin": 34, "amax": 34, "flag": "", "note": "", "avr": 26.58, "seq": 111}, {"year": 2568, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "APD./APN.20", "full": "", "rt": "รายการ", "num": 39, "av": 66.67, "ready": 26, "rel": 45073, "amin": 29, "amax": 30, "flag": "", "note": "", "avr": 66.71, "seq": 112}, {"year": 2568, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "KIHA.183", "full": "", "rt": "รายการ", "num": 17, "av": 100.0, "ready": 17, "rel": null, "amin": 3, "amax": 3, "flag": "", "note": "", "avr": null, "seq": 113}, {"year": 2568, "cat": "รถดีเซลราง", "sub": "ไม่ปรับอากาศ", "type": "รวมดีเซลรางธรรมดา", "full": "Total", "rt": "ยอดรวมตามรายงาน", "num": 159, "av": 75.47, "ready": 120, "rel": 81049, "amin": null, "amax": null, "flag": "", "note": "", "avr": null, "seq": 114}, {"year": 2568, "cat": "รถดีเซลราง", "sub": "ปรับอากาศ", "type": "รวมดีเซลรางปรับอากาศ", "full": "Total", "rt": "ยอดรวมตามรายงาน", "num": 84, "av": 67.86, "ready": 57, "rel": null, "amin": null, "amax": null, "flag": "", "note": "", "avr": 67.85, "seq": 115}, {"year": 2568, "cat": "รถดีเซลราง", "sub": "ทั้งหมด", "type": "รวมรถดีเซลรางทั้งสิ้น", "full": "Total", "rt": "ยอดรวมตามรายงาน", "num": 243, "av": 72.84, "ready": 177, "rel": null, "amin": null, "amax": null, "flag": "", "note": "", "avr": 72.83, "seq": 116}, {"year": 2568, "cat": "รถโดยสาร", "sub": "8 ล้อ-ปรับอากาศ", "type": "A.N.F.", "full": "Air-Conditioned First Class (A.N.F.)", "rt": "รายการ", "num": 31, "av": 70.97, "ready": 22, "rel": null, "amin": 9, "amax": 48, "flag": "", "note": "", "avr": 71.41, "seq": 117}, {"year": 2568, "cat": "รถโดยสาร", "sub": "8 ล้อ-ปรับอากาศ", "type": "A.N.S.", "full": "Air-Conditioned Second Class (A.N.S., A.S.C.)", "rt": "รายการ", "num": 283, "av": 73.14, "ready": 207, "rel": null, "amin": 9, "amax": 66, "flag": "", "note": "", "avr": null, "seq": 118}, {"year": 2568, "cat": "รถโดยสาร", "sub": "8 ล้อ-ปรับอากาศ", "type": "A.T.C.", "full": "Air-Conditioned Third Class (A.T.C.)", "rt": "รายการ", "num": 5, "av": 80.0, "ready": 4, "rel": null, "amin": 46, "amax": 48, "flag": "", "note": "", "avr": 69.68, "seq": 119}, {"year": 2568, "cat": "รถโดยสาร", "sub": "8 ล้อ-ไม่ปรับอากาศ", "type": "B.N.S.", "full": "Bogie Second Class (B.N.S., B.S.C.)", "rt": "รายการ", "num": 83, "av": 72.29, "ready": 60, "rel": null, "amin": 42, "amax": 74, "flag": "", "note": "", "avr": 72.28, "seq": 120}, {"year": 2568, "cat": "รถโดยสาร", "sub": "8 ล้อ-ไม่ปรับอากาศ", "type": "B.T.C.", "full": "Bogie Third Class (B.T.C., B.S.T.)", "rt": "รายการ", "num": 619, "av": 77.54, "ready": 480, "rel": null, "amin": 44, "amax": 96, "flag": "", "note": "", "avr": null, "seq": 121}, {"year": 2568, "cat": "รถโดยสาร", "sub": "8 ล้อ-อื่นๆ", "type": "A.P.V.C.", "full": "Air-Conditioned Power Van (A.P.V.C.)", "rt": "รายการ", "num": 17, "av": 100.0, "ready": 17, "rel": null, "amin": 6, "amax": 9, "flag": "", "note": "", "avr": 98.14, "seq": 122}, {"year": 2568, "cat": "รถโดยสาร", "sub": "8 ล้อ-อื่นๆ", "type": "A.R.C.", "full": "Air-Conditioned Restaurant Car (A.R.C.)", "rt": "รายการ", "num": 17, "av": 70.59, "ready": 12, "rel": null, "amin": 9, "amax": 57, "flag": "", "note": "", "avr": 69.91, "seq": 123}, {"year": 2568, "cat": "รถโดยสาร", "sub": "8 ล้อ-อื่นๆ", "type": "B.R.C.", "full": "Bogie Restaurant Car (B.R.C., B.B.T.)", "rt": "รายการ", "num": 57, "av": 35.09, "ready": 20, "rel": null, "amin": 51, "amax": 96, "flag": "", "note": "", "avr": 35.08, "seq": 124}, {"year": 2568, "cat": "รถโดยสาร", "sub": "8 ล้อ-อื่นๆ", "type": "B.V.", "full": "Bogie Full Van (B.T.V., B.V.S., B.F.V.)", "rt": "รายการ", "num": 97, "av": 70.1, "ready": 68, "rel": null, "amin": 44, "amax": 108, "flag": "", "note": "", "avr": null, "seq": 125}, {"year": 2568, "cat": "รถโดยสาร", "sub": "8 ล้อ-อื่นๆ", "type": "รถชนิดอื่นๆ", "full": "Other Bogies", "rt": "รายการ", "num": 75, "av": 94.67, "ready": 71, "rel": null, "amin": 43, "amax": 110, "flag": "", "note": "", "avr": 94.66, "seq": 126}, {"year": 2568, "cat": "รถโดยสาร", "sub": "8 ล้อ-ปรับอากาศ", "type": "รวมรถโดยสารปรับอากาศ", "full": "Total (Air-Conditioned)", "rt": "ยอดรวมตามรายงาน", "num": 319, "av": 73.04, "ready": 233, "rel": null, "amin": null, "amax": null, "flag": "", "note": "", "avr": null, "seq": 127}, {"year": 2568, "cat": "รถโดยสาร", "sub": "8 ล้อ-ไม่ปรับอากาศ", "type": "รวมรถโดยสารธรรมดา", "full": "Total (Non Air-Conditioned)", "rt": "ยอดรวมตามรายงาน", "num": 702, "av": 76.92, "ready": 540, "rel": null, "amin": null, "amax": null, "flag": "", "note": "", "avr": null, "seq": 128}, {"year": 2568, "cat": "รถโดยสาร", "sub": "8 ล้อ-อื่นๆ", "type": "รวมรถโดยสาร 8 ล้อ", "full": "Total 8-wheeled Passenger Coach", "rt": "ยอดรวมตามรายงาน", "num": 1287, "av": 74.59, "ready": 960, "rel": null, "amin": null, "amax": null, "flag": "", "note": "", "avr": 74.76, "seq": 129}, {"year": 2568, "cat": "รถโดยสาร", "sub": "4 ล้อ", "type": "รถโดยสาร 4 ล้อ", "full": "4-wheeled Bogie Reserved Saloon", "rt": "รายการ", "num": 1, "av": 100, "ready": 1, "rel": null, "amin": 111, "amax": 111, "flag": "", "note": "", "avr": null, "seq": 130}, {"year": 2568, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.C.F.", "full": "Bogie Container Flat Wagon (B.C.F.)", "rt": "รายการ", "num": 1310, "av": null, "ready": null, "rel": null, "amin": null, "amax": null, "flag": "", "note": "", "avr": null, "seq": 131}, {"year": 2568, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.G.T.", "full": "Bogie LPG Tank Wagon (B.G.T.)", "rt": "รายการ", "num": 126, "av": null, "ready": null, "rel": null, "amin": null, "amax": null, "flag": "", "note": "", "avr": null, "seq": 132}, {"year": 2568, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.O.T.", "full": "Bogie Oil-Tank Wagon (B.O.T.)", "rt": "รายการ", "num": 736, "av": null, "ready": null, "rel": null, "amin": null, "amax": null, "flag": "", "note": "", "avr": null, "seq": 133}, {"year": 2568, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.C.G.", "full": "Bogie Covered Goods Wagon (B.C.G.)", "rt": "รายการ", "num": 239, "av": 84.1, "ready": 201, "rel": null, "amin": 35, "amax": 52, "flag": "", "note": "", "avr": 83.83, "seq": 134}, {"year": 2568, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "B.B.V.", "full": "Bogie Brake Van (B.B.V.)", "rt": "รายการ", "num": 28, "av": 53.57, "ready": 15, "rel": null, "amin": 42, "amax": 57, "flag": "", "note": "", "avr": 54.22, "seq": 135}, {"year": 2568, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "สินค้า 8 ล้อ อื่นๆ", "full": "Other 8-wheeled freight wagon", "rt": "รายการ", "num": null, "av": null, "ready": null, "rel": null, "amin": 10, "amax": 97, "flag": "", "note": "", "avr": null, "seq": 136}, {"year": 2568, "cat": "รถสินค้า", "sub": "8 ล้อ", "type": "รวมรถสินค้า 8 ล้อ", "full": "Total freight wagon (8-wheeled)", "rt": "ยอดรวมตามรายงาน", "num": 2891, "av": 74.65, "ready": 2158, "rel": null, "amin": 7, "amax": 97, "flag": "", "note": "", "avr": 74.64, "seq": 137}, {"year": 2568, "cat": "รถสินค้า", "sub": "12 ล้อ", "type": "รถสินค้า 12 ล้อ", "full": "12-wheeled freight wagon", "rt": "รายการ", "num": null, "av": 100, "ready": 2, "rel": null, "amin": 56, "amax": 56, "flag": "", "note": "", "avr": null, "seq": 138}, {"year": 2568, "cat": "รถสินค้า", "sub": "4 ล้อ", "type": "รถสินค้า 4 ล้อ", "full": "4-wheeled freight wagon", "rt": "รายการ", "num": null, "av": 74.59, "ready": 22, "rel": null, "amin": 37, "amax": 97, "flag": "", "note": "", "avr": null, "seq": 139}];
+  var CAT = { loco: 'รถจักรดีเซล', rail: 'รถดีเซลราง', pass: 'รถโดยสาร', fr: 'รถสินค้า' };
+  var RT_ITEM = 'รายการ', RT_TOT = 'ยอดรวมตามรายงาน';
+  var FIELDS = ['year', 'cat', 'sub', 'type', 'full', 'rt', 'num', 'av', 'ready', 'rel', 'amin', 'amax', 'flag', 'note', 'avr'];
+  var NUMF = ['year', 'num', 'av', 'ready', 'rel', 'amin', 'amax', 'avr'];
+  var FONT = "'IBM Plex Sans Thai','Noto Sans Thai','Leelawadee UI',Tahoma,sans-serif";
+  var STORE_KEY = 'rolling-stock-rows-v3', OLD_KEY = 'rolling-stock-rows-v2';
+
+  var GLOSS = {
+    'QSY': { th: 'รถจักรดีเซลไฟฟ้า CRRC Qishuyan (จีน) เริ่มใช้ปี 2566', g: 1 },
+    'CSR': { th: 'รถจักรดีเซลไฟฟ้า CSR (China South Rail จีน)', g: 1 },
+    'GEA': { th: 'รถจักรดีเซลไฟฟ้า ตระกูล GE ชื่อเต็มไม่ระบุในรายงาน', g: 1 },
+    'GE': { th: 'รถจักรดีเซลไฟฟ้า General Electric (สหรัฐฯ)', g: 1 },
+    'HID': { th: 'รถจักรดีเซลไฟฟ้า Hitachi (ญี่ปุ่น)', g: 1 },
+    'ALS': { th: 'รถจักรดีเซลไฟฟ้า Alsthom (ฝรั่งเศส)', g: 1 },
+    'รถจักรสับเปลี่ยน': { th: 'รถจักรสำหรับสับเปลี่ยนขบวนในย่าน' },
+    'Hi-Renovate': { th: 'รถดีเซลรางไม่ปรับอากาศ ที่ปรับปรุงใหม่', g: 1 },
+    'THN./NKF.': { th: 'รถดีเซลรางไม่ปรับอากาศ รุ่น THN. และ NKF. (ชานเมือง)', g: 1 },
+    'ATR': { th: 'รถดีเซลรางปรับอากาศ รุ่น ATR', g: 1 },
+    'ASR': { th: 'รถดีเซลรางปรับอากาศ รุ่น ASR', g: 1 },
+    'APD./APN.20': { th: 'รถดีเซลรางปรับอากาศ รุ่น APD. / APN.20', g: 1 },
+    'KIHA.183': { th: 'รถดีเซลรางปรับอากาศ รุ่น KIHA 183 (ญี่ปุ่น)', g: 1 },
+    'A.N.F.': { th: 'รถนั่งชั้น 1 ปรับอากาศ' },
+    'A.N.S.': { th: 'รถนั่งชั้น 2 ปรับอากาศ' },
+    'B.N.S.': { th: 'รถนั่งชั้น 2 พัดลม' },
+    'A.T.C.': { th: 'รถนั่งชั้น 3 ปรับอากาศ' },
+    'B.T.C.': { th: 'รถนั่งชั้น 3' },
+    'A.P.V.C.': { th: 'รถกำเนิดไฟฟ้า ปรับอากาศ' },
+    'A.R.C.': { th: 'รถเสบียงปรับอากาศ' },
+    'B.R.C.': { th: 'รถเสบียง' },
+    'B.V.': { th: 'รถตู้สัมภาระ' },
+    'รถชนิดอื่นๆ': { th: 'รถโดยสารชนิดอื่นๆ' },
+    'รถโดยสาร 4 ล้อ': { th: 'รถโดยสาร 4 ล้อ' },
+    'B.C.F.': { th: 'รถบรรทุกตู้คอนเทนเนอร์' },
+    'B.G.T.': { th: 'รถบรรทุกก๊าซ LPG' },
+    'B.O.T.': { th: 'รถบรรทุกน้ำมัน' },
+    'B.C.G.': { th: 'รถบรรทุกสินค้าตู้ทึบ' },
+    'B.B.V.': { th: 'รถตู้เบรกท้ายขบวนสินค้า' },
+    'สินค้า 8 ล้อ อื่นๆ': { th: 'รถสินค้า 8 ล้อ ชนิดอื่นๆ' },
+    'รถสินค้า 12 ล้อ': { th: 'รถสินค้า 12 ล้อ' },
+    'รถสินค้า 4 ล้อ': { th: 'รถสินค้า 4 ล้อ' }
+  };
+  function glossOf(t) { return GLOSS[t] || null; }
+  var SHORT = { 'QSY': 'รถจักร CRRC (จีน)', 'CSR': 'รถจักร CSR (จีน)', 'GEA': 'รถจักรตระกูล GE', 'GE': 'รถจักร General Electric', 'HID': 'รถจักร Hitachi', 'ALS': 'รถจักร Alsthom',
+    'THN./NKF.': 'ดีเซลรางชานเมือง', 'Hi-Renovate': 'ดีเซลรางปรับปรุงใหม่', 'ATR': 'ดีเซลรางปรับอากาศ', 'ASR': 'ดีเซลรางปรับอากาศ', 'APD./APN.20': 'ดีเซลรางปรับอากาศ', 'KIHA.183': 'ดีเซลราง KIHA 183',
+    'รถจักรสับเปลี่ยน': 'รถจักรสับเปลี่ยน' };
+  function shortOf(t) { return SHORT[t] || (glossOf(t) ? glossOf(t).th : ''); }
+  function unitLine(r) { if (!r || !isNum(r.num) || !isNum(r.ready)) return ''; return 'ไม่พร้อมใช้ ' + Math.round(r.num - r.ready) + ' จาก ' + num0(r.num) + ' คัน' + (isNum(r.av) ? ' (Availability ' + fmt(r.av, 1) + '%)' : ''); }
+  function nameOf(t) { var g = glossOf(t); return g ? g.th : t; }
+
+  /* ================= state ================= */
+  var rows = [], dbRef = null, local = false, downloads = null, canWrite = true, loading = true;
+  var sortKey = 'year', sortDir = 1, editingId = null, parsedImport = null, exMetric = 'av';
+  var exYearSel = null;
+
+  /* ================= utils ================= */
+  var EXEC_ONLY = true, STUB = document.createElement('div');
+  function $(id) { return document.getElementById(id) || STUB; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function isNum(v) { return typeof v === 'number' && isFinite(v); }
+  function fmt(v, d) { return isNum(v) ? v.toLocaleString('en-US', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }) : '–'; }
+  function num0(v) { return isNum(v) ? Math.round(v).toLocaleString('en-US') : '–'; }
+  function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 3500); }
+  function median(a) { var s = a.slice().sort(function (x, y) { return x - y; }), m = s.length >> 1; return s.length ? (s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2) : null; }
+  function years() { var s = {}; rows.forEach(function (r) { if (isNum(r.year)) s[r.year] = 1; }); return Object.keys(s).map(Number).sort(function (a, b) { return a - b; }); }
+  function items(cat) { return rows.filter(function (r) { return r.rt === RT_ITEM && (!cat || r.cat === cat); }); }
+  function calcAv(r) { return isNum(r.num) && isNum(r.ready) && r.num > 0 ? r.ready / r.num * 100 : null; }
+  function relOk(r) { return isNum(r.rel) && r.rel > 0 && !/สเกล/.test(r.flag || ''); }
+  function hexA(hex, a) { var h = hex.replace('#', ''); if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join(''); var n = parseInt(h, 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+
+  /* ================= category series ================= */
+  function totalOf(y, type) { return rows.filter(function (r) { return r.year === y && r.rt === RT_TOT && r.type === type; })[0]; }
+  function sumOf(list) {
+    var n = 0, rd = 0; list.forEach(function (r) { if (isNum(r.num) && isNum(r.ready)) { n += r.num; rd += r.ready; } });
+    return n > 0 ? { av: rd / n * 100, n: n, rd: rd } : null;
+  }
+  function fromTotal(type, fallback) {
+    return function (y) {
+      var t = totalOf(y, type);
+      if (t && isNum(t.num) && isNum(t.ready) && t.num > 0) return { av: t.ready / t.num * 100, n: t.num, rd: t.ready };
+      if (t && isNum(t.av)) return { av: t.av, n: t.num, rd: isNum(t.num) ? t.num * t.av / 100 : null };
+      return fallback ? fallback(y) : null;
+    };
+  }
+  var SERIES = [
+    { key: 'loco', label: 'รถจักรทำขบวน', short: 'รถจักร', color: '--c1', cat: CAT.loco,
+      get: fromTotal('รวมรถจักรดีเซลทำขบวน', function (y) { return sumOf(rows.filter(function (r) { return r.year === y && r.cat === CAT.loco && r.sub === 'ขบวนรถ' && r.rt === RT_ITEM; })); }) },
+    { key: 'rail', label: 'รถดีเซลราง', short: 'ดีเซลราง', color: '--c3', cat: CAT.rail,
+      get: fromTotal('รวมรถดีเซลรางทั้งสิ้น', function (y) { return sumOf(rows.filter(function (r) { return r.year === y && r.cat === CAT.rail && r.rt === RT_ITEM; })); }) },
+    { key: 'pass', label: 'รถโดยสาร 8 ล้อ', short: 'รถโดยสาร', color: '--c2', cat: CAT.pass, get: fromTotal('รวมรถโดยสาร 8 ล้อ') },
+    { key: 'fr', label: 'รถสินค้า 8 ล้อ', short: 'รถสินค้า', color: '--c4', cat: CAT.fr, get: fromTotal('รวมรถสินค้า 8 ล้อ') }
+  ];
+  function locoExQsy(y) { return sumOf(rows.filter(function (r) { return r.year === y && r.cat === CAT.loco && r.sub === 'ขบวนรถ' && r.rt === RT_ITEM && r.type !== 'QSY'; })); }
+  function prevYearWith(s, y) { var ys = years().filter(function (x) { return x < y && s.get(x); }); return ys.length ? ys[ys.length - 1] : null; }
+
+  /* ================= charts ================= */
+  var charts = {};
+  /* ================= LANGUAGE (TH / EN) ================= */
+  var LANG = 'th', LKEY = 'rolling-stock-lang-v1';
+  try { var _l = localStorage.getItem(LKEY); if (_l === 'en' || _l === 'th') LANG = _l; } catch (e) { /* ignore */ }
+  var I18N_PATS = [
+    [/ที่มา: รายงานประจำปี ร\.ฟ\.ท\. หัวข้อสถิติรถจักรและล้อเลื่อน ปี ([\d, ]+)/g, 'Source: SRT Annual Report, locomotive and rolling stock statistics, FY $1'],
+    [/Availability ([\d.]+) เท่ากันทุกปีที่มีข้อมูล \(([^)]*)\) ควรตรวจกับต้นฉบับ/g, 'Availability $1 is identical in every year with data ($2) – verify against the original'],
+    [/Availability ([\d.]+) เท่ากับปี (\d+) พอดี \(ควรตรวจ\)/g, 'Availability $1 exactly equals FY $2 (verify)'],
+    [/ข้อมูลซ้ำกับรถโดยสารปรับอากาศ ตัด Availability พร้อมใช้ อายุ ออก \(รายงานพิมพ์ ([^)]*)\)/g, 'Duplicates the A/C passenger car data; Availability, ready units and age removed (report prints $1)'],
+    [/ปี (\d+) แยก B\.T\.V\. ไปอยู่กลุ่ม Full Van จึงเทียบกับปีก่อนได้ไม่ตรง 100%/g, 'In FY $1 B.T.V. was moved to the Full Van group, so comparison with earlier years is not exactly like-for-like'],
+    [/ผลคำนวณ (\d+) ÷ (\d+) = ([\d.]+)% ต่างจาก ([\d.]+)% มาก \(ควรตรวจ\)/g, 'Computed $1 ÷ $2 = $3% differs greatly from $4% (verify)'],
+    [/แก้ Availability ([\d.]+) → ([\d.]+) \(ต่างเกิน 3 จุด ควรยืนยันกับต้นฉบับว่าผิดที่ % หรือที่จำนวนพร้อมใช้\)/g, 'Availability corrected $1 → $2 (differs by more than 3 pts; confirm with the original whether the % or the ready count is wrong)'],
+    [/รายงานพิมพ์ Availability ([\d.]+) และพร้อมใช้ ([\d.]+) ซึ่งเหมือนปี (\d+) ทั้งที่จำนวนรถต่างกัน \((\d+) vs (\d+)\) ตัดออก/g, 'Report prints Availability $1 and ready $2, identical to FY $3 although the fleet size differs ($4 vs $5); removed'],
+    [/อายุ (\d+) ปี อาจพิมพ์ผิด \(ปี (\d+)=(\d+), (\d+)=(\d+) จึงคาดว่าควรเป็น (\d+)\)/g, 'Age $1 yrs may be a typo (FY $2=$3, $4=$5, so probably $6)'],
+    [/ช่องจำนวนในรายงานพิมพ์ ([\d.]+) \(ซ้ำกับ Availability\) ตัดจำนวนออก; Availability ([\d.]+)% ควรตรวจ/g, 'Report\'s count field prints $1 (duplicate of Availability); count removed; Availability $2% should be verified'],
+    [/พร้อมใช้ (\d+) คัน มากกว่าจำนวนที่มี (\d+) คัน \(ปี (\d+) มี (\d+) คัน พร้อมใช้ (\d+) จึงน่าจะคัดลอกมา\)/g, 'Ready $1 units exceeds fleet $2 units (FY $3 had $4 units, ready $5, so likely copied over)'],
+    [/รายงานพิมพ์จำนวน (\d+) คัน แต่พร้อมใช้ (\d+) คัน \(ปีก่อน (\d+) และ (\d+) คัน\) ตัดจำนวนออก/g, 'Report prints fleet $1 units but ready $2 units (previous years $3 and $4 units); count removed'],
+    [/รายงานไม่พิมพ์จำนวน Availability พร้อมใช้ \(มีเฉพาะอายุ\)/g, 'Report does not print fleet count, Availability or ready units (age only)'],
+    [/สเกลหลักล้าน ผิดปกติ ไม่นำมาเทียบ/g, 'Value in the millions – abnormal scale, excluded from comparison'],
+    [/ลดลง (\d+) ใน (\d+) หมวด/g, 'fell in $1 of $2 categories'],
+    [/^(.+?)ลดมากที่สุด ([\d.]+) จุด/g, '$1 fell the most, by $2 pts'],
+    [/^(.+?) ความพร้อมใช้ลดลงมากที่สุด$/g, '$1: largest availability drop'],
+    [/รถไม่พร้อมใช้กระจุกใน (\d+) ชนิด/g, 'Unavailable vehicles are concentrated in $1 types'],
+    [/\((\d+)% ของทั้งหมด\)/g, '($1% of the total)'],
+    [/ปี (\d+) · (\d+) ชนิดแรกคิดเป็น (\d+)% ของรถไม่พร้อมใช้ทั้งหมด/g, 'FY $1 · the top $2 types account for $3% of all unavailable vehicles'],
+    [/ปี (\d+) → (\d+) \((\d+) ปีที่ใช้ได้\)/g, 'FY $1 → $2 ($3 usable years)'],
+    [/ไม่มีข้อมูลที่ใช้ได้ปี ([\d, ]+) \(รายงานไม่มีหรือตรวจสอบข้อมูล\) การเปลี่ยนแปลงข้ามช่วงนี้อาจมีขึ้นลงที่มองไม่เห็น/g, 'No usable data for FY $1 (missing in the report or data to verify); ups and downs across this gap may be hidden'],
+    [/รถจักรใช้ข้อมูลปี (\d+) \(ปี (\d+) ค่า Reliability ตรวจสอบข้อมูล\)/g, 'Locomotives use FY $1 data (FY $2 Reliability values are on the data to verify)'],
+    [/ดีเซลรางใช้ข้อมูลปี (\d+)/g, 'Railcars use FY $1 data'],
+    [/เส้นประกับป้ายแนวโน้มอาจดูขัดกัน: เส้นประคือแนวเฉลี่ยทุกปี \(ถูกดึงโดยปีที่ (ต่ำผิดปกติ|สูงผิดปกติ) (\d+)\) ส่วนป้ายดูการเปลี่ยนจากปีก่อนหน้าถึงปีล่าสุดและค่าต้นช่วง-ปลายช่วง/g,
+      function (m, a, y) { return 'The dashed line and the trend label may look contradictory: the dashed line is the all-years average (pulled by an abnormally ' + (a === 'ต่ำผิดปกติ' ? 'low' : 'high') + ' FY ' + y + '), while the label looks at the change from the previous year to the latest year and from first to last value.'; }],
+    [/แสดง ([\d,]+) จาก ([\d,]+) แถว/g, 'Showing $1 of $2 rows'],
+    [/บันทึกในเบราว์เซอร์นี้ · ([\d,]+) แถว/g, 'Saved in this browser · $1 rows'],
+    [/ฐานข้อมูลร่วม · ([\d,]+) แถว/g, 'Shared database · $1 rows'],
+    [/มี ([\d,]+) แถวที่ควรยืนยันกับต้นฉบับ/g, '$1 rows should be verified against the original'],
+    [/Availability คำนวณใหม่ = รถพร้อมใช้ ÷ รถที่มีใช้งาน × 100 \(([\d,]+) แถวต่างจากที่รายงาน\)/g, 'Recalculated Availability = ready ÷ in-service × 100 ($1 rows differ from the report)'],
+    [/ตรวจแล้ว ([\d,]+) แถว: เพิ่มใหม่ ([\d,]+), แทนที่ ([\d,]+)/g, 'Checked $1 rows: $2 new, $3 replaced'],
+    [/และอีก ([\d,]+) แถว/g, 'and $1 more rows'],
+    [/นำเข้าเสร็จ ([\d,]+) แถว/g, 'Import finished: $1 rows'],
+    [/นำเข้า ([\d,]+) แถวแล้ว/g, 'Imported $1 rows'],
+    [/หยุดที่แถว (\d+)/g, 'Stopped at row $1'],
+    [/แถวที่ (\d+): /g, 'Row $1: '],
+    [/มีแถวปี (\d+) (.+?) (.+?) \((.+?)\) อยู่แล้ว ให้แก้ที่แถวเดิม/g, 'A row for FY $1 $2 $3 ($4) already exists – edit the existing row'],
+    [/ไม่พบคอลัมน์: /g, 'Columns not found: '],
+    [/ประเภทแถวต้องเป็น "รายการ" หรือ "ยอดรวมตามรายงาน"/g, 'Row type must be "Item" or "Report total"'],
+    [/(\d+) ล้อ-ปรับอากาศ/g, '$1-wheel – A/C'], [/(\d+) ล้อ-ไม่ปรับอากาศ/g, '$1-wheel – non-A/C'], [/(\d+) ล้อ-อื่นๆ/g, '$1-wheel – other'],
+    [/ปี (\d+) มีรถไม่พร้อมใช้รวม/g, 'In FY $1, total unavailable vehicles:'],
+    [/ปี (\d+) ความพร้อมใช้/g, 'FY $1 availability'],
+    [/ปี (\d+) นับเกณฑ์ต่างกัน เทียบด้วยความระวัง/g, 'FY $1 used different counting criteria – compare with caution']
+  ];
+  var I18N_DICT = {
+    'สถิติรถจักรและล้อเลื่อน': 'Locomotive & Rolling Stock Statistics',
+    'ข้อมูลหลังบ้าน · สถิติรถจักรและล้อเลื่อน': 'Back office · Locomotive & Rolling Stock Statistics',
+    'ข้อมูลจากรายงานประจำปี ฝ่ายการช่างกล การรถไฟแห่งประเทศไทย': 'Data from the Annual Report of the Mechanical Engineering Department, State Railway of Thailand',
+    'จัดทำโดย': 'Prepared by',
+    'เมนูหลัก': 'Main menu', 'ภาพรวมผู้บริหาร': 'Executive overview', 'ข้อมูลหลังบ้าน': 'Back office',
+    'รายงานผู้บริหาร · ปีงบประมาณ': 'Executive report · Fiscal year',
+    'ความพร้อมของกองรถ ปีงบประมาณ': 'Fleet readiness, fiscal year', 'ความพร้อมกองรถ รฟท. ปีงบประมาณ': 'SRT Fleet Readiness, fiscal year', 'ความพร้อมกองรถ รฟท.': 'SRT Fleet Readiness',
+    'ความพร้อมของกองรถ': 'Fleet readiness', 'เต็มจอ': 'Full screen', 'เบราว์เซอร์นี้ไม่รองรับเต็มจอ': 'This browser does not support full screen',
+    'ปีงบประมาณ (พ.ศ.)': 'Fiscal year (B.E.)', 'ปีงบประมาณ': 'Fiscal year',
+    'ยังไม่มีข้อมูลให้แสดง': 'No data to display.',
+    'ต้องเชื่อมต่ออินเทอร์เน็ตเพื่อแสดงกราฟ': 'An internet connection is required to display charts', 'กำลังโหลดข้อมูล': 'Loading data', 'กำลังโหลด': 'Loading',
+    'เรื่องที่ควรตัดสินใจ': 'Decisions needed',
+    'ความพร้อมใช้ไม่ลดลงในทุกหมวด': 'Availability did not fall in any category',
+    'คงแผนเดิมและติดตามรายเดือน': 'Keep the current plan and monitor monthly',
+    'ลดจาก': 'Down from', 'เหลือ': 'to', 'ชนิดที่ไม่พร้อมใช้มากสุดคือ': '. Most unavailable types:',
+    'ควรทบทวนแผนเข้าซ่อมของหมวดนี้': '. Review the repair-intake plan for this category.',
+    'ที่ไม่พร้อมใช้มากสุดคือ': 'most unavailable:',
+    'รถไม่พร้อมใช้กระจุกใน': 'Unavailable vehicles concentrated in',
+    'รวม': 'total', 'ของทั้งหมด': 'of the total',
+    'การเร่งซ่อมเฉพาะกลุ่มนี้ให้ผลเร็วที่สุด': '. Fast-tracking repairs for this group gives the quickest gain',
+    'ชนิดที่ควรพิจารณาซ่อมใหญ่': 'Types to consider for heavy overhaul',
+    'ชำรุดบ่อยและพร้อมใช้ต่ำกว่าค่ากลางของกลุ่ม ควรวิเคราะห์ระบบที่ชำรุดซ้ำก่อนตั้งงบซ่อมปีถัดไป': '. Frequent failures and availability below the group benchmark. Analyse the repeatedly failing systems before setting next year\'s repair budget.',
+    'Reliability มีแนวโน้มลดลง:': 'Reliability is trending down:',
+    'ยังไม่มีชนิดที่ต่ำทั้งสองด้าน': 'No type is low on both axes',
+    'ดูตารางลำดับการซ่อมบำรุงด้านล่างสำหรับชนิดที่ควรปรับรอบซ่อม': 'See the maintenance priority table below for types whose repair cycle should be adjusted',
+    'เมื่อเทียบปีก่อนหน้า โดย': 'compared with the previous year, with',
+    'ขณะนี้มีรถไม่พร้อมใช้รวม': '. Vehicles currently unavailable in total:',
+    'ในรถ 4 หมวดหลัก': 'across the 4 main categories',
+    'จาก': 'of', 'ใน 4 หมวดหลัก': 'in the 4 main categories',
+    'ตัวเลขรถจักรได้แรงหนุนจากรถ QSY ใหม่ 50 คัน หากไม่รวม QSY ความพร้อมใช้ของรถจักรเดิมอยู่ที่': 'The locomotive figure is boosted by 50 new QSY units. Excluding QSY, availability of the existing locomotives is',
+    'ไม่รวม QSY ใหม่:': 'Excluding new QSY:',
+    'ความพร้อมใช้รายหมวด': 'Availability by category',
+    'Availability รายหมวด 5 ปี': 'Availability by category, 5 years',
+    '% รถพร้อมใช้ ÷ รถที่มีใช้งาน · ไม่มีข้อมูลปี': '% ready vehicles ÷ vehicles in service · no data for FY',
+    'กราฟเส้น Availability รายหมวด': 'Line chart of Availability by category',
+    'รถจักรทำขบวน': 'Mainline locomotives', 'รถดีเซลราง': 'Diesel railcars', 'รถจักรดีเซล': 'Diesel locomotives',
+    'รถโดยสาร 8 ล้อ': '8-wheel passenger cars', 'รถสินค้า 8 ล้อ': '8-wheel freight wagons', 'รถโดยสาร': 'Passenger cars', 'รถสินค้า': 'Freight wagons',
+    'รถจักร': 'Locomotives', 'ดีเซลราง': 'Railcars',
+    'รถที่ไม่พร้อมใช้มากที่สุด': 'Vehicles most often unavailable',
+    'กราฟแท่งจำนวนรถไม่พร้อมใช้แยกชนิด': 'Bar chart of unavailable vehicles by type',
+    'จำนวนรถไม่พร้อมใช้ (คัน)': 'Unavailable vehicles (units)',
+    'ชนิดรถ': 'Vehicle type', 'ชนิด (ตัวย่อ)': 'Type (abbreviation)', 'ชนิด': 'Type',
+    'ของรถไม่พร้อมใช้ทั้งหมด': 'of all unavailable vehicles',
+    'Reliability และลำดับการซ่อมบำรุง': 'Reliability and maintenance priority',
+    'กราฟ Availability เทียบ Reliability รถจักรดีเซล': 'Availability vs Reliability chart, diesel locomotives',
+    'กราฟ Availability เทียบ Reliability รถดีเซลราง': 'Availability vs Reliability chart, diesel railcars',
+    'ข้อมูลปี': 'Data for FY',
+    'Availability (%) — ยิ่งสูงยิ่งพร้อมใช้': 'Availability (%) — higher means more ready',
+    'Reliability (กม./ครั้ง) — ยิ่งสูงยิ่งชำรุดน้อย': 'Reliability (km/failure) — higher means fewer failures',
+    'Reliability (กม./ครั้ง)': 'Reliability (km/failure)',
+    'โซนควรดูก่อน': 'Review first',
+    'เป้าหมาย Availability %': 'Availability target %', 'เป้าหมาย Reliability กม./ครั้ง': 'Reliability target km/failure',
+    'เป้าหมาย': 'Target', 'เป้า': 'Target', 'ค่ากลาง': 'Median', 'ใช้ค่ากลาง': 'Use median',
+    'ขนาดวง = จำนวนคัน · เส้นประ = เกณฑ์เป้าหมาย (ถ้าไม่กรอก ใช้ค่ากลางของกลุ่ม) · สีแดง = ควรดูก่อน สีเหลือง = ควรปรับรอบซ่อม': 'Bubble size = number of units · dashed line = target threshold (median of the group if left blank) · red = review first, yellow = adjust the repair cycle',
+    'ขนาดวง': 'Bubble size',
+    '* รายงานไม่ระบุชื่อเต็ม คำอธิบายใส่ตามความเข้าใจ ควรยืนยันกับฝ่ายการช่างกล': '* The report does not give the full name. The description is our interpretation – confirm with the Mechanical Engineering Department.',
+    '* รายงานไม่ระบุชื่อเต็ม คำอธิบายนี้ใส่ตามความเข้าใจ ควรยืนยันกับฝ่ายการช่างกล': '* The report does not give the full name. This description is our interpretation – confirm with the Mechanical Engineering Department.',
+    'ลำดับแรก': 'Top priority', 'เร่งรอบซ่อม': 'Speed up repair cycle', 'ซ่อมเชิงป้องกัน': 'Preventive maintenance', 'ปกติ': 'Normal',
+    'ชำรุดบ่อยและพร้อมใช้ต่ำ: วิเคราะห์ระบบที่ชำรุดซ้ำ พิจารณาซ่อมใหญ่หรือปรับปรุงสภาพ': 'Frequent failures and low availability: analyse repeat-failure systems; consider heavy overhaul or refurbishment',
+    'ชำรุดไม่บ่อยแต่พร้อมใช้ต่ำ: ลดเวลาซ่อมค้าง จัดการอะไหล่ คิวเข้าโรงงาน': 'Few failures but low availability: cut repair backlog, manage spare parts and workshop queue',
+    'พร้อมใช้ดีแต่ชำรุดบ่อย: ถี่รอบตรวจ เปลี่ยนชิ้นส่วนเสื่อมก่อนกำหนด': 'Good availability but frequent failures: shorten inspection intervals, replace worn parts early',
+    'คงรอบซ่อมเดิม ติดตามแนวโน้ม': 'Keep the current repair cycle and monitor the trend',
+    'ไม่มีชนิดรถที่ต้องเร่งดำเนินการ': 'No vehicle type needs urgent action',
+    'ลำดับ': 'Priority', 'เทียบปีก่อน': 'vs prior year', 'เทียบปีก่อนหน้า': 'vs previous year', 'แนวทางซ่อมบำรุง': 'Maintenance approach',
+    'คัน': 'units ', 'พร้อมใช้ดี': 'good availability',
+    'Reliability รายชนิดรถ และแนวโน้ม': 'Reliability by vehicle type and trend',
+    'กม. ต่อการชำรุด 1 ครั้ง · คลิกแถวเพื่อเปลี่ยนกราฟด้านบน · รถโดยสารและรถสินค้าไม่มีข้อมูล Reliability ในรายงาน': 'km per failure · click a row to change the chart above · passenger and freight cars have no Reliability data in the report',
+    'เลือกชนิดรถ': 'Select vehicle type', 'กราฟ Reliability รายปีของชนิดรถที่เลือก': 'Yearly Reliability chart of the selected vehicle type',
+    'เส้นแนวโน้มเชิงเส้น (ทุกปีที่มีข้อมูล)': 'Linear trend line (all years with data)',
+    'พิจารณาแนวโน้ม Reliability ของชนิดรถ จากปีที่ข้อมูลใช้ได้ (ตัดปีที่ตรวจสอบข้อมูล)': 'Reliability trend assessment per vehicle type, using usable years only (wrong-scale years excluded)',
+    'ปีล่าสุดตกแรง': 'Sharp drop in latest year', 'ลดลงต่อเนื่อง': 'Continuous decline', 'ลดลง': 'Declining', 'ดีขึ้น': 'Improving', 'ทรงตัว': 'Stable', 'ผันผวนสูง': 'Highly volatile', 'ข้อมูลไม่พอ': 'Insufficient data',
+    'ตรวจสอบข้อมูล*': 'Data to verify*',
+    'ตารางเปรียบเทียบทุกชนิด': 'Comparison table, all types', 'การพิจารณาแนวโน้ม:': 'Trend assessment:', 'แนวทาง:': 'Approach:',
+    'ช่วงข้อมูล': 'Data range', 'เปลี่ยนรวม': 'Total change', 'เฉลี่ยต่อปี (ปลายทาง)': 'Average per year (end-to-end)', 'เฉลี่ยต่อปี (เทียบค่าเฉลี่ย)': 'Average per year (vs average)',
+    'ต่อปี (เทียบค่าเฉลี่ย)': 'per year (vs average)', 'ต่อปี': 'per year',
+    'สูงสุด / ต่ำสุด': 'Max / Min', 'ความชันเส้นประ': 'Dashed-line slope', 'ปีล่าสุดเทียบปี': 'Latest year vs FY',
+    'เปลี่ยนแปลง': 'Change', 'แนวโน้ม': 'Trend',
+    'ไม่มีปีก่อนให้เทียบ': 'No earlier year to compare',
+    'ค่าแกว่งระหว่างปีมาก ควรตรวจสาเหตุเป็นปีๆ (เหตุขัดข้องรุนแรงครั้งเดียว ระยะวิ่งต่อปีเปลี่ยน หรือวิธีนับเปลี่ยน) ก่อนปรับแผน': 'Values swing widely between years. Check the cause year by year (a single severe failure, change in annual mileage or in counting method) before adjusting the plan.',
+    'ค่าใกล้เคียงเดิมตลอดช่วงข้อมูล คงรอบซ่อมเดิมและติดตามต่อ': 'Values stay close to the original throughout the data period. Keep the current repair cycle and continue monitoring.',
+    'ชำรุดน้อยลง ควรถอดบทเรียนมาตรการซ่อมที่ใช้ และคงรอบซ่อมไว้ ไม่ควรลดงบซ่อมทันที': 'Fewer failures. Capture lessons from the repair measures used and keep the repair cycle; do not cut the repair budget immediately.',
+    'เสื่อมลงทุกปีที่มีข้อมูล เร่งหาสาเหตุชำรุดซ้ำ ปรับรอบซ่อมให้ถี่ขึ้น และพิจารณาซ่อมใหญ่ก่อนค่าตกต่ำกว่านี้': 'Deteriorating in every year with data. Find the repeat-failure causes quickly, shorten the repair cycle and consider a heavy overhaul before values fall further.',
+    'ควรตรวจสาเหตุที่ชำรุดเพิ่มขึ้น ทบทวนรอบซ่อมและคุณภาพอะไหล่': 'Investigate why failures increased; review repair cycles and spare-part quality.',
+    'ปีล่าสุดต่ำสุดในช่วงข้อมูล': 'The latest year is the lowest in the data period.',
+    'ภาพรวมหลายปียังทรงตัว แต่ปีล่าสุดตกจากปีก่อน': 'The multi-year picture is stable, but the latest year fell from the prior year by',
+    'ควรตรวจว่าเป็นเหตุครั้งเดียวหรือเริ่มเสื่อม และรอดูข้อมูลปีถัดไป (ถ้าปีถัดไปยังต่ำอีก ให้ถือว่าเริ่มเสื่อม)': 'Check whether it was a one-off event or the start of deterioration, and wait for next year\'s data (if next year is still low, treat it as deterioration).',
+    'มีข้อมูลที่ใช้ได้ไม่ถึง 2 ปี ยังประเมินแนวโน้มไม่ได้ ควรเก็บสถิติต่อเนื่อง': 'Fewer than 2 usable years; the trend cannot be assessed yet. Keep collecting statistics.',
+    'มีข้อมูลเพียง 2 ปี ข้อสรุปยังไม่หนักแน่น': 'Only 2 years of data, so the conclusion is not yet firm',
+    'เส้นประ = เส้นแนวโน้มเชิงเส้นของทุกปีที่ข้อมูลใช้ได้ (ตั้งแต่ 3 ปี) · ป้ายแนวโน้มดูจากค่าต้นช่วงถึงปลายช่วงและปีล่าสุด จึงอาจไม่ตรงกับทิศของเส้นประเสมอไป · เมื่อมีข้อมูลปี 2569 กราฟและป้ายจะคำนวณใหม่ตามข้อมูลล่าสุด':
+      'Dashed line = linear trend line over all usable years (from 3 years). The trend label looks at first-to-last value and the latest year, so it may not always match the direction of the dashed line. When FY 2569 data becomes available, charts and labels will be recalculated with the latest data.',
+    'เกณฑ์แนวโน้ม: เปลี่ยนเฉลี่ยต่อปี ≤ −10% = ลดลง (ลดลงต่อเนื่องถ้าตกทุกปี) · ≥ +10% = ดีขึ้น · ปีล่าสุดตกจากปีก่อน ≥ 25% = ปีล่าสุดตกแรง · สูงสุด÷ต่ำสุด > 1.8 เท่า = ผันผวนสูง · นอกนั้นทรงตัว ใช้เฉพาะปีที่ข้อมูลใช้ได้ ปี 2567 ของรถจักรตรวจสอบข้อมูลจึงไม่นำมาคิด (* ค่าสูงกว่าปีอื่น 10–100 เท่า)':
+      'Trend criteria: average change per year ≤ −10% = declining (continuous decline if it falls every year) · ≥ +10% = improving · latest year down ≥ 25% from the prior year = sharp drop in latest year · max÷min > 1.8× = highly volatile · otherwise stable. Only usable years are counted; FY 2567 locomotive values are on the data to verify and are excluded (* values 10–100× higher than other years).',
+    'ที่มา: รายงานประจำปี ร.ฟ.ท. หัวข้อสถิติรถจักรและล้อเลื่อน ปี': 'Source: SRT Annual Report, locomotive and rolling stock statistics, FY',
+    'ดูในข้อมูลหลังบ้าน': 'View in Back office',
+    /* back office */
+    'เพิ่ม แก้ไข ตรวจคุณภาพข้อมูล การแก้ไขจะแสดงผลในหน้าผู้บริหารทันที': 'Add, edit and check data quality. Changes appear on the executive page immediately.',
+    'สำหรับเจ้าหน้าที่': 'For staff', 'แถวข้อมูล': 'Data rows', 'แก้ Availability แล้ว': 'Availability corrected', 'ธงให้ยืนยันต้นฉบับ': 'Flagged to verify', 'ไม่ครบ/ไม่สอดคล้อง': 'Incomplete / inconsistent',
+    'แสดงในตาราง': 'Show in table', 'ตรวจข้อมูล': 'Data check', 'รายการที่ควรตรวจ': 'Items to check', 'ไม่มีรายการที่ต้องตรวจ': 'Nothing to check',
+    'จากธงข้อมูลและการตรวจอัตโนมัติ': 'From data flags and automatic checks', 'ตารางข้อมูล': 'Data table',
+    'ค้นหา': 'Search', 'ค้นหาชนิด ชื่อ หมายเหตุ': 'Search type, name, note', 'กรองตามปี': 'Filter by year', 'กรองตามหมวด': 'Filter by category',
+    'ทุกปี': 'All years', 'ทุกหมวด': 'All categories', 'เฉพาะแถวที่ควรตรวจ': 'Only rows to check', 'เฉพาะแถวที่แก้ Availability': 'Only rows with corrected Availability',
+    'เพิ่มแถวข้อมูล': 'Add data row', 'แก้ไขแถวข้อมูล': 'Edit data row', 'นำเข้า CSV': 'Import CSV', 'ส่งออก CSV': 'Export CSV', 'คืนค่าข้อมูลตั้งต้น': 'Restore default data', 'กดอีกครั้งเพื่อยืนยัน': 'Click again to confirm', 'ยืนยันลบ': 'Confirm delete',
+    'หมวด': 'Category', 'หมวดรถ': 'Vehicle category', 'กลุ่มย่อย': 'Subgroup', 'ประเภทแถว': 'Row type', 'ชื่อเต็มในรายงาน': 'Full name in report',
+    'ที่มี (คัน)': 'In service (units)', 'จำนวนที่มีใช้งาน (คัน)': 'Units in service', 'พร้อมใช้ (คัน)': 'Ready (units)', 'จำนวนพร้อมใช้ (คัน)': 'Ready units',
+    'Availability (%) · คำนวณให้อัตโนมัติ': 'Availability (%) · calculated automatically',
+    'อายุ (ปี)': 'Age (yrs)', 'อายุต่ำสุด (ปี)': 'Min age (yrs)', 'อายุสูงสุด (ปี)': 'Max age (yrs)',
+    'ธงข้อมูล (ถ้าค่าในรายงานน่าสงสัย)': 'Data flag (if a value in the report looks doubtful)', 'หมายเหตุ': 'Note',
+    'สถานะ': 'Status', 'จัดการ': 'Actions', 'แก้': 'Edit', 'ลบ': 'Delete', 'บันทึก': 'Save', 'ยกเลิก': 'Cancel', 'ปิด': 'Close', 'นำเข้า': 'Import',
+    'ควรตรวจ': 'Check', 'ข้อมูลไม่ครบ': 'Incomplete data', 'พร้อมใช้ > ที่มี': 'Ready > in service', 'Availability ไม่ตรง': 'Availability mismatch', 'ไม่มีจำนวนหรือจำนวนพร้อมใช้': 'Missing fleet or ready count',
+    'ไม่มีจำนวนหรือจำนวนพร้อมใช้ คำนวณ Availability ไม่ได้': 'Missing fleet or ready count; Availability cannot be calculated',
+    'ต่างจากรายงานเกิน 3 จุด': 'differs from the report by more than 3 pts',
+    'รายงานเดิม': 'Original report', 'Availability ตามรายงานเดิม (%)': 'Availability per original report (%)', 'Availability ที่แก้แล้ว (พร้อมใช้ ÷ ที่มี)': 'Corrected Availability (ready ÷ in service)',
+    'ไม่มีข้อมูล Reliability ของหมวดนี้ในรายงาน': 'No Reliability data for this category in the report',
+    'ตัดค่าที่ต้องตรวจสอบข้อมูลออก': 'Excludes values that need data verification',
+    'เปรียบเทียบแยกชนิด': 'Comparison by type', 'ตัวชี้วัด': 'Metric', 'กราฟเปรียบเทียบแยกชนิดรถ': 'Comparison chart by vehicle type',
+    'คำอธิบายตัวย่อชนิดรถ': 'Vehicle type abbreviations',
+    'นำเข้าข้อมูลจาก CSV': 'Import data from CSV', 'ข้อมูล CSV': 'CSV data', 'เลือกไฟล์ CSV': 'Choose CSV file', 'เลือกไฟล์': 'Choose file',
+    'แถวแรกต้องเป็นหัวคอลัมน์ ต้องมี year, cat, type, rt · แถวที่ ปี+หมวด+ชนิด+ประเภทแถว ตรงกับที่มีอยู่จะถูกแทนที่ · ถ้ามี num และ ready ระบบจะคำนวณ Availability ให้': 'The first row must be the column headers and must include year, cat, type, rt · rows whose year + category + type + row type match an existing row will replace it · if num and ready are given, Availability is calculated automatically.',
+    'เช่น 2569': 'e.g. 2569', 'เช่น QSY': 'e.g. QSY', 'เช่น ขบวนรถ': 'e.g. Train service', 'เช่น รถจักรดีเซล': 'e.g. Diesel locomotives', 'เช่น': 'e.g.',
+    'บันทึกแล้ว': 'Saved', 'ลบแล้ว': 'Deleted', 'บันทึกไม่สำเร็จ': 'Save failed', 'ลบไม่สำเร็จ': 'Delete failed', 'ยังไม่พร้อมบันทึก': 'Not ready to save',
+    'ส่งออกแล้ว': 'Exported', 'ส่งออกไม่สำเร็จ': 'Export failed', 'อ่านข้อมูลไม่ได้': 'Could not read data', 'คืนค่าข้อมูลตั้งต้นแล้ว': 'Default data restored', 'คืนค่าได้เฉพาะโหมดไฟล์': 'Restore is available only in file mode',
+    'ปีต้องเป็นปี พ.ศ. เช่น 2569': 'Year must be a Buddhist Era year, e.g. 2569', 'ต้องระบุหมวด': 'Category is required', 'ต้องระบุชนิด': 'Type is required', 'ต้องระบุปี': 'Year is required',
+    'ต้องไม่ติดลบ': 'Must not be negative', 'ต้องเป็นตัวเลข': 'Must be a number', 'ต้องไม่เกิน 100': 'Must not exceed 100',
+    'จำนวนพร้อมใช้ต้องไม่มากกว่าจำนวนที่มี': 'Ready count must not exceed fleet count', 'อายุต่ำสุดต้องไม่มากกว่าอายุสูงสุด': 'Minimum age must not exceed maximum age',
+    'ต้องมีหัวคอลัมน์และข้อมูลอย่างน้อย 1 แถว': 'Needs a header row and at least 1 data row', 'ซ้ำกับแถวก่อนหน้าในไฟล์': 'duplicates an earlier row in the file',
+    'ไม่มีแถวที่ตรงกับตัวกรอง': 'No rows match the filters',
+    'ยังไม่มีข้อมูล กด "เพิ่มแถวข้อมูล" หรือ "นำเข้า': 'No data yet. Click "Add data row" or "Import',
+    'รายการ': 'Item', 'ยอดรวมตามรายงาน': 'Report total', 'ยอดรวม': 'Total',
+    'ขบวนรถ': 'Train service', 'ทั้งหมด': 'All', 'สับเปลี่ยน': 'Shunting', 'ปรับอากาศ': 'A/C', 'ไม่ปรับอากาศ': 'non-A/C', 'ปี ▲': 'Year ▲', 'ปี ▼': 'Year ▼',
+    'ธงข้อมูล': 'Data flag', 'กรอง': 'Filter',
+    /* vehicle names */
+    'รถจักรสับเปลี่ยน': 'Shunting locomotives', 'รถจักรสำหรับสับเปลี่ยนขบวนในย่าน': 'Locomotives for shunting trains in yards',
+    'รถชนิดอื่นๆ': 'Other vehicles', 'รถสินค้า 12 ล้อ': '12-wheel freight wagons', 'รถสินค้า 4 ล้อ': '4-wheel freight wagons', 'รถโดยสาร 4 ล้อ': '4-wheel passenger cars',
+    'รวมดีเซลรางธรรมดา': 'Total non-A/C railcars', 'รวมดีเซลรางปรับอากาศ': 'Total A/C railcars', 'รวมรถจักรดีเซลทำขบวน': 'Total mainline diesel locomotives', 'รวมรถดีเซลรางทั้งสิ้น': 'Grand total diesel railcars',
+    'รวมรถสินค้า 8 ล้อ': 'Total 8-wheel freight wagons', 'รวมรถโดยสาร 8 ล้อ': 'Total 8-wheel passenger cars', 'รวมรถโดยสารธรรมดา': 'Total ordinary passenger cars', 'รวมรถโดยสารปรับอากาศ': 'Total A/C passenger cars',
+    'สินค้า 8 ล้อ อื่นๆ': 'Other 8-wheel freight wagons', 'รถสินค้า 8 ล้อ ชนิดอื่นๆ': 'Other 8-wheel freight wagons', 'รถโดยสารชนิดอื่นๆ': 'Other passenger cars',
+    'รถกำเนิดไฟฟ้า ปรับอากาศ': 'A/C generator car', 'รถนั่งชั้น 3 ปรับอากาศ': '3rd-class A/C seating car', 'รถนั่งชั้น 3': '3rd-class seating car', 'รถนั่งชั้น 1 ปรับอากาศ': '1st-class A/C seating car', 'รถนั่งชั้น 2 พัดลม': '2nd-class fan seating car', 'รถนั่งชั้น 2 ปรับอากาศ': '2nd-class A/C seating car',
+    'รถบรรทุกก๊าซ LPG': 'LPG tank wagon', 'รถบรรทุกตู้คอนเทนเนอร์': 'Container wagon', 'รถบรรทุกน้ำมัน': 'Oil tank wagon', 'รถบรรทุกสินค้าตู้ทึบ': 'Covered goods wagon', 'รถตู้สัมภาระ': 'Baggage van', 'รถตู้เบรกท้ายขบวนสินค้า': 'Freight brake van',
+    'รถเสบียงปรับอากาศ': 'A/C dining car', 'รถเสบียง': 'Dining car', 'รถนั่งชั้น': 'Seating car, class', 'รถบรรทุกก๊าซ': 'Gas tank wagon',
+    'รถจักรดีเซลไฟฟ้า Alsthom (ฝรั่งเศส)': 'Diesel-electric locomotive, Alsthom (France)', 'รถจักร Alsthom': 'Alsthom locomotives',
+    'รถจักรดีเซลไฟฟ้า CRRC Qishuyan (จีน) เริ่มใช้ปี': 'Diesel-electric locomotive, CRRC Qishuyan (China), in service from FY',
+    'รถจักรดีเซลไฟฟ้า CSR (China South Rail จีน)': 'Diesel-electric locomotive, CSR (China South Rail)',
+    'รถจักรดีเซลไฟฟ้า General Electric (สหรัฐฯ)': 'Diesel-electric locomotive, General Electric (USA)',
+    'รถจักรดีเซลไฟฟ้า Hitachi (ญี่ปุ่น)': 'Diesel-electric locomotive, Hitachi (Japan)',
+    'รถจักรดีเซลไฟฟ้า ตระกูล GE ชื่อเต็มไม่ระบุในรายงาน': 'Diesel-electric locomotive, GE family (full name not given in the report)',
+    'รถดีเซลรางปรับอากาศ รุ่น': 'A/C diesel railcar, series', 'รถดีเซลรางไม่ปรับอากาศ รุ่น THN. และ NKF. (ชานเมือง)': 'Non-A/C diesel railcar, series THN. and NKF. (suburban)',
+    'รถดีเซลรางไม่ปรับอากาศ ที่ปรับปรุงใหม่': 'Refurbished non-A/C diesel railcar', 'รถดีเซลรางปรับอากาศ รุ่น KIHA 183 (ญี่ปุ่น)': 'A/C diesel railcar, KIHA 183 series (Japan)',
+    'ดีเซลรางชานเมือง': 'Suburban railcar', 'ดีเซลรางปรับปรุงใหม่': 'Refurbished railcar', 'ดีเซลรางปรับอากาศ': 'A/C railcar',
+    'รถจักร CRRC (จีน)': 'CRRC locomotive (China)', 'รถจักร CSR (จีน)': 'CSR locomotive (China)', 'รถจักรตระกูล GE': 'GE-family locomotive', 'รถจักร General Electric': 'General Electric locomotive', 'รถจักร Hitachi': 'Hitachi locomotive', 'รถจักร Alsthom': 'Alsthom locomotive',
+    'พ.ศ.': 'B.E.', 'จุด': 'pts', 'กม./ครั้ง': 'km/failure', 'เทียบปี': 'vs FY', 'ไม่มีข้อมูลปี': 'no data for FY', 'ปีที่ใช้ได้': 'usable years',
+    'ปีก่อนหน้า': 'previous year', 'ปีก่อน': 'prior year', 'ปีถัดไป': 'next year', 'ปีล่าสุด': 'latest year', 'และ': 'and', 'ต่ำผิดปกติ': 'abnormally low', 'สูงผิดปกติ': 'abnormally high',
+    'เท่า': '×', 'ไม่พร้อมใช้': 'not ready', 'พร้อมใช้': 'ready', 'ทั้งสิ้น': 'in total', 'อื่นๆ': 'other', 'ที่มา': 'Source'
+  };
+  var I18N_PRE = [[/(?<![ก-๙])ปี (\d{4})/g, 'FY $1']];
+  var I18N_FINAL = [[/(\d+) ล้อ/g, '$1-wheel'], [/(\d+) ปี(?![ก-๙])/g, '$1 yrs'], [/ปี/g, 'Year']];
+  (function () { var d2 = {}; Object.keys(I18N_DICT).forEach(function (k) { var kk = k; I18N_PRE.forEach(function (p) { kk = kk.replace(p[0], p[1]); }); d2[kk] = I18N_DICT[k]; }); I18N_DICT = d2; })();
+  var I18N_KEYS = Object.keys(I18N_DICT).sort(function (a, b) { return b.length - a.length; });
+  var trCache = {};
+  function tr(s) {
+    if (LANG !== 'en' || s == null) return s;
+    s = String(s);
+    if (!/[ก-๙]/.test(s)) return s;
+    if (trCache[s] !== undefined) return trCache[s];
+    var o = s, i, k;
+    for (i = 0; i < I18N_PATS.length; i++) o = o.replace(I18N_PATS[i][0], I18N_PATS[i][1]);
+    for (i = 0; i < I18N_PRE.length; i++) o = o.replace(I18N_PRE[i][0], I18N_PRE[i][1]);
+    for (i = 0; i < I18N_KEYS.length; i++) { k = I18N_KEYS[i]; if (o.indexOf(k) >= 0) o = o.split(k).join(I18N_DICT[k]); }
+    for (i = 0; i < I18N_FINAL.length; i++) o = o.replace(I18N_FINAL[i][0], I18N_FINAL[i][1]);
+    o = o.replace(/ {2,}/g, ' ').replace(/ ([,.);:])/g, '$1').replace(/\.\.+/g, '.').replace(/^ \. /, '');
+    trCache[s] = o; return o;
+  }
+  var ATTRS = ['placeholder', 'aria-label', 'title', 'alt'];
+  var domBusy = false;
+  function trNode(n) {
+    if (n.nodeType === 3) {
+      var p = n.parentNode; if (!p || p.tagName === 'SCRIPT' || p.tagName === 'STYLE') return;
+      if (n.__tr !== undefined && n.nodeValue === n.__tr) return;
+      if (!/[ก-๙]/.test(n.nodeValue)) { return; }
+      var o = tr(n.nodeValue);
+      if (n.previousSibling && /^[A-Za-z0-9]/.test(o) && !/^\s/.test(n.nodeValue)) o = ' ' + o;
+      if (n.nextSibling && /[A-Za-z0-9]$/.test(o) && !/\s$/.test(n.nodeValue)) o = o + ' ';
+      n.__th = n.nodeValue; n.__tr = o; n.nodeValue = o;
+    } else if (n.nodeType === 1) {
+      if (n.tagName === 'SCRIPT' || n.tagName === 'STYLE') return;
+      ATTRS.forEach(function (a) {
+        var v = n.getAttribute(a); if (!v || !/[ก-๙]/.test(v)) return;
+        n.__ta = n.__ta || {}; if (n.__ta[a] && n.__ta[a].tr === v) return;
+        var t = tr(v); n.__ta[a] = { th: v, tr: t }; n.setAttribute(a, t);
+      });
+      for (var c = n.firstChild; c; c = c.nextSibling) trNode(c);
+    }
+  }
+  function untrNode(n) {
+    if (n.nodeType === 3) { if (n.__th !== undefined && n.nodeValue === n.__tr) n.nodeValue = n.__th; n.__th = undefined; n.__tr = undefined; }
+    else if (n.nodeType === 1) {
+      if (n.__ta) { Object.keys(n.__ta).forEach(function (a) { if (n.getAttribute(a) === n.__ta[a].tr) n.setAttribute(a, n.__ta[a].th); }); n.__ta = null; }
+      for (var c = n.firstChild; c; c = c.nextSibling) untrNode(c);
+    }
+  }
+  function trDocument() { domBusy = true; try { trNode(document.body); } finally { domBusy = false; } }
+  var moTimer = null;
+  function startObserver() {
+    if (typeof MutationObserver === 'undefined') return;
+    new MutationObserver(function () {
+      if (LANG !== 'en' || domBusy) return;
+      clearTimeout(moTimer); moTimer = setTimeout(trDocument, 30);
+    }).observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+  }
+  (function patchCanvas() {
+    if (typeof CanvasRenderingContext2D === 'undefined') return;
+    var P = CanvasRenderingContext2D.prototype, ft = P.fillText, mt = P.measureText;
+    P.fillText = function (t) { var a = arguments; if (LANG === 'en') { a = Array.prototype.slice.call(arguments); a[0] = tr(t); } return ft.apply(this, a); };
+    P.measureText = function (t) { return mt.call(this, LANG === 'en' ? tr(t) : t); };
+  })();
+  function setLang(l) {
+    if (l === LANG) return;
+    domBusy = true; try { untrNode(document.body); } finally { domBusy = false; }
+    LANG = l; try { localStorage.setItem(LKEY, l); } catch (e) { /* ignore */ }
+    applyLangUi(); renderAll(); if (LANG === 'en') trDocument();
+  }
+  function applyLangUi() {
+    document.documentElement.setAttribute('lang', LANG);
+    var bt = document.querySelectorAll('.lang button');
+    for (var i = 0; i < bt.length; i++) bt[i].setAttribute('aria-pressed', bt[i].getAttribute('data-l') === LANG ? 'true' : 'false');
+  }
+
+  function mk(id, cfg) {
+    if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+    var el = $(id); if (!el) return;
+    if (typeof Chart === 'undefined') { if (!el.getAttribute('data-nochart')) { el.setAttribute('data-nochart', '1'); el.parentNode.insertAdjacentHTML('beforeend', '<div class="empty">ต้องเชื่อมต่ออินเทอร์เน็ตเพื่อแสดงกราฟ</div>'); } return; }
+    charts[id] = new Chart(el.getContext('2d'), cfg);
+  }
+  function baseOpts(yTitle) {
+    var mu = css('--muted'), ln = css('--line'), fg = css('--fg');
+    return {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { color: fg, boxWidth: 12, boxHeight: 12, font: { family: FONT, size: 12 } } },
+        tooltip: { titleFont: { family: FONT }, bodyFont: { family: FONT } }
+      },
+      scales: {
+        x: { ticks: { color: mu, font: { family: FONT, size: 12 } }, grid: { display: false }, border: { color: ln } },
+        y: { ticks: { color: mu, font: { family: FONT, size: 12 } }, grid: { display: false }, border: { color: ln },
+          title: { display: !!yTitle, text: yTitle || '', color: mu, font: { family: FONT, size: 12 } } }
+      }
+    };
+  }
+  function pal(i) { return css('--c' + ((i % 6) + 1)); }
+  function niceBounds(vals) {
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), ticks = [];
+    for (var e = Math.floor(Math.log10(lo)) - 1; e <= Math.ceil(Math.log10(hi)) + 1; e++) [1, 2, 5].forEach(function (m) { ticks.push(m * Math.pow(10, e)); });
+    var min = ticks.filter(function (t) { return t <= lo; }).pop(), max = ticks.filter(function (t) { return t >= hi; })[0];
+    return { min: min, max: max, ticks: ticks.filter(function (t) { return t >= min && t <= max; }) };
+  }
+  function logAxis(axis, b) {
+    axis.type = 'logarithmic'; axis.min = b.min; axis.max = b.max;
+    axis.afterBuildTicks = function (a) { a.ticks = b.ticks.map(function (v) { return { value: v }; }); };
+    axis.ticks.callback = function (v) { return Number(v).toLocaleString('en-US'); };
+  }
+  function niceMax(v) { var p = Math.pow(10, Math.floor(Math.log10(v))), m = v / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
+  /* labels drawn on bars / points */
+  function valuePlugin(f, opt) {
+    opt = opt || {};
+    return { id: 'vl', afterDatasetsDraw: function (chart) {
+      var ctx = chart.ctx; ctx.save(); ctx.fillStyle = css('--fg'); ctx.font = (opt.size || 11) + 'px ' + FONT;
+      var lastYs = [];
+      if (opt.onlyLast) {
+        var arr = [];
+        chart.data.datasets.forEach(function (ds, i) { var m = chart.getDatasetMeta(i); if (m.hidden || ds.noLabels) return; var j = ds.data.length - 1; if (ds.data[j] == null || !m.data[j]) return; arr.push({ i: i, y: m.data[j].y, ly: m.data[j].y }); });
+        arr.sort(function (a, b) { return a.y - b.y; });
+        for (var k = 1; k < arr.length; k++) if (arr[k].ly - arr[k - 1].ly < 15) arr[k].ly = arr[k - 1].ly + 15;
+        arr.forEach(function (a) { lastYs[a.i] = a.ly; });
+      }
+      chart.data.datasets.forEach(function (ds, i) {
+        var meta = chart.getDatasetMeta(i); if (meta.hidden || ds.noLabels) return;
+        meta.data.forEach(function (el, j) {
+          var v = ds.data[j]; if (v && typeof v === 'object') v = v.y; if (v == null || !isFinite(v)) return;
+          if (opt.onlyLast && j !== ds.data.length - 1) return;
+          var t = f(v);
+          if (opt.horizontal) { ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t, el.x + 6, el.y); }
+          else if (opt.rotate) { ctx.save(); ctx.translate(el.x, el.y - 4); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t, 0, 0); ctx.restore(); }
+          else if (opt.onlyLast && lastYs[i] != null) { ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillStyle = ds.borderColor; ctx.font = '600 ' + (opt.size || 11) + 'px ' + FONT; ctx.fillText(t, el.x + 12, lastYs[i]); ctx.fillStyle = css('--fg'); }
+          else { ctx.textAlign = opt.align || 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(t, el.x + (opt.dx || 0), el.y - 8); }
+        });
+      });
+      ctx.restore(); } };
+  }
+
+  /* ================= EXECUTIVE ================= */
+  function sparkSvg(vals, color) {
+    var pts = vals.filter(function (v) { return v != null; }); if (pts.length < 2) return '';
+    var w = 84, h = 30, lo = Math.min.apply(null, pts) - 2, hi = Math.max.apply(null, pts) + 2, n = vals.length, d = '', last = null;
+    vals.forEach(function (v, i) { if (v == null) return; var x = (i / (n - 1)) * (w - 6) + 3, y = h - 3 - (v - lo) / (hi - lo) * (h - 6); d += (d ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); last = [x, y]; });
+    return '<svg class="spark" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true"><path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="3" fill="' + color + '"/></svg>';
+  }
+  function renderExec() {
+    var ys = years(); if (!ys.length) { $('exLead').textContent = 'ยังไม่มีข้อมูลให้แสดง'; $('exKpis').innerHTML = ''; return; }
+    var sel = $('exYear'), sig = ys.join(',');
+    if (sel.getAttribute('data-sig') !== sig) {
+      sel.innerHTML = ys.slice().reverse().map(function (y) { return '<option value="' + y + '">' + y + '</option>'; }).join('');
+      sel.setAttribute('data-sig', sig);
+      if (exYearSel && ys.indexOf(exYearSel) >= 0) sel.value = String(exYearSel); else sel.value = String(ys[ys.length - 1]);
+    }
+    var Y = Number(sel.value); exYearSel = Y;
+    $('exEyebrow').textContent = 'รายงานผู้บริหาร · ปีงบประมาณ ' + Y;
+    $('exTitle').textContent = 'ความพร้อมกองรถ รฟท. ปีงบประมาณ ' + Y;
+
+    /* KPI tiles */
+    var stats = SERIES.map(function (s) {
+      var cur = s.get(Y), py = prevYearWith(s, Y), prev = py ? s.get(py) : null;
+      return { s: s, cur: cur, py: py, prev: prev, d: cur && prev ? cur.av - prev.av : null,
+        spark: ys.map(function (y) { var v = s.get(y); return v ? v.av : null; }) };
+    });
+    $('exKpis').innerHTML = stats.map(function (o) {
+      var col = css(o.s.color);
+      if (!o.cur) return '<div class="kpi" style="--kc:' + col + '"><div class="kpi-l">' + esc(o.s.label) + '</div><div class="kpi-v">–</div><div class="kpi-s">ไม่มีข้อมูลปี ' + Y + '</div></div>';
+      var cls = o.d == null ? 'flat' : (Math.abs(o.d) < 0.05 ? 'flat' : (o.d > 0 ? 'up' : 'down'));
+      var dt = o.d == null ? 'ไม่มีปีก่อนให้เทียบ' : (cls === 'up' ? '▲ ' : cls === 'down' ? '▼ ' : '') + fmt(Math.abs(o.d), 1) + ' จุด เทียบปี ' + o.py;
+      var un = isNum(o.cur.rd) && isNum(o.cur.n) ? o.cur.n - o.cur.rd : null;
+      var sub = '<b>' + num0(o.cur.n) + '</b> คัน · ไม่พร้อมใช้ <b>' + num0(un) + '</b> คัน';
+      if (o.s.key === 'loco') { var q = locoExQsy(Y); if (q && Math.abs(q.av - o.cur.av) > 0.5) sub += '<br>ไม่รวม QSY ใหม่: <b>' + fmt(q.av, 1) + '%</b>'; }
+      if (o.s.key === 'fr' && o.py === 2564) sub += '<br>ปี 2564 นับเกณฑ์ต่างกัน เทียบด้วยความระวัง';
+      return '<div class="kpi" style="--kc:' + col + '"><div class="kpi-l">' + esc(o.s.label) + '</div>' +
+        '<div class="kpi-row"><div class="kpi-v">' + fmt(o.cur.av, 1) + '<small>%</small></div>' + sparkSvg(o.spark, col) + '</div>' +
+        '<div class="kpi-d ' + cls + '">' + esc(dt) + '</div><div class="kpi-s">' + sub + '</div></div>';
+    }).join('');
+
+    /* headline */
+    var withD = stats.filter(function (o) { return o.d != null; });
+    var downs = withD.filter(function (o) { return o.d < -0.05; });
+    var worst = withD.slice().sort(function (a, b) { return a.d - b.d; })[0];
+    var totUn = 0, totN = 0; stats.forEach(function (o) { if (o.cur && isNum(o.cur.rd)) { totUn += o.cur.n - o.cur.rd; totN += o.cur.n; } });
+    var lead = '';
+    if (withD.length) {
+      lead = 'ปี ' + Y + ' ความพร้อมใช้' + (downs.length ? '<b>ลดลง ' + downs.length + ' ใน ' + withD.length + ' หมวด</b>' : '<b>ไม่ลดลงในทุกหมวด</b>') + ' เมื่อเทียบปีก่อนหน้า';
+      if (worst && worst.d < -0.05) lead += ' โดย<b>' + esc(worst.s.label) + 'ลดมากที่สุด ' + fmt(Math.abs(worst.d), 1) + ' จุด</b>';
+      lead += ' ขณะนี้มีรถไม่พร้อมใช้รวม <b>' + num0(totUn) + ' คัน</b> จาก ' + num0(totN) + ' คันใน 4 หมวดหลัก';
+    } else lead = 'ปี ' + Y + ' มีรถไม่พร้อมใช้รวม <b>' + num0(totUn) + ' คัน</b> จาก ' + num0(totN) + ' คันใน 4 หมวดหลัก';
+    var q = locoExQsy(Y), lt = stats[0].cur;
+    if (q && lt && lt.av - q.av > 2) lead += ' · ตัวเลขรถจักรได้แรงหนุนจากรถ QSY ใหม่ 50 คัน หากไม่รวม QSY ความพร้อมใช้ของรถจักรเดิมอยู่ที่ <b>' + fmt(q.av, 1) + '%</b>';
+    $('exLead').innerHTML = lead;
+
+    renderTrend(ys, Y);
+    var unav = renderUnavail(Y);
+    var prio = renderReliability(Y); renderRelTypes();
+    renderMsgs(Y, stats, unav, prio);
+    renderExplorer();
+    $('exMethod').innerHTML = '<span>ที่มา: รายงานประจำปี ร.ฟ.ท. หัวข้อสถิติรถจักรและล้อเลื่อน ปี ' + ys.join(', ') + '</span>' +
+      '<span>Availability คำนวณใหม่ = รถพร้อมใช้ ÷ รถที่มีใช้งาน × 100 (' + rows.filter(function (r) { return isNum(r.avr); }).length + ' แถวต่างจากที่รายงาน)</span>';
+  }
+
+  function renderTrend(ys, Y) {
+    var ds = SERIES.map(function (s) {
+      var c = css(s.color);
+      return { label: s.label, data: ys.map(function (y) { var v = s.get(y); return v ? Math.round(v.av * 10) / 10 : null; }),
+        borderColor: c, backgroundColor: c, borderWidth: 2.5, tension: 0, spanGaps: true,
+        pointRadius: ys.map(function (y) { return y === Y ? 6 : 3.5; }), pointHoverRadius: 7 };
+    });
+    var all = []; ds.forEach(function (d) { d.data.forEach(function (v) { if (v != null) all.push(v); }); });
+    var o = baseOpts('Availability (%)');
+    o.scales.x.title = { display: true, text: 'ปีงบประมาณ (พ.ศ.)', color: css('--muted'), font: { family: FONT, size: 12 } };
+    o.scales.y.min = 0; o.scales.y.max = 100; o.scales.y.ticks.stepSize = 20;
+    o.plugins.tooltip.callbacks = { label: function (c) { return c.dataset.label + ': ' + fmt(c.parsed.y, 1) + '%'; } };
+    mk('cTrend', { type: 'line', data: { labels: ys.map(String), datasets: ds }, options: o, plugins: [valuePlugin(function (v) { return fmt(v, 1); }, { onlyLast: true, align: 'left', dx: 8, size: 12 })] });
+    if (charts.cTrend) { charts.cTrend.options.layout = { padding: { right: 48 } }; charts.cTrend.update(); }
+  }
+
+  function renderUnavail(Y) {
+    var list = items().filter(function (r) { return r.year === Y && isNum(r.num) && isNum(r.ready) && r.ready <= r.num; })
+      .map(function (r) { return { r: r, u: Math.round(r.num - r.ready) }; })
+      .filter(function (x) { return x.u > 0; })
+      .sort(function (a, b) { return b.u - a.u; });
+    var tot = list.reduce(function (s, x) { return s + x.u; }, 0), top = list.slice(0, 8);
+    var share = tot ? top.reduce(function (s, x) { return s + x.u; }, 0) / tot * 100 : 0;
+    $('unHint').textContent = 'ปี ' + Y + ' · 8 ชนิดแรกคิดเป็น ' + fmt(share, 0) + '% ของรถไม่พร้อมใช้ทั้งหมด';
+    var colorFor = function (cat) { var s = SERIES.filter(function (x) { return x.cat === cat; })[0]; return css(s ? s.color : '--c5'); };
+    var o = baseOpts('');
+    o.indexAxis = 'y';
+    o.plugins.legend.display = false;
+    o.interaction = { mode: 'nearest', intersect: true, axis: 'y' };
+    o.plugins.tooltip.callbacks = {
+      title: function (it) { var x = top[it[0].dataIndex]; return x.r.type + ' · ' + nameOf(x.r.type); },
+      label: function (c) { var x = top[c.dataIndex]; return 'ไม่พร้อมใช้ ' + x.u + ' จาก ' + num0(x.r.num) + ' คัน (Availability ' + fmt(x.r.av, 1) + '%)'; } };
+    var mx = top.length ? top[0].u : 10;
+    o.scales.x.max = niceMax(mx * 1.18); o.scales.x.min = 0;
+    o.scales.x.title = { display: true, text: 'จำนวนรถไม่พร้อมใช้ (คัน)', color: css('--muted'), font: { family: FONT, size: 12 } };
+    o.scales.y.title = { display: true, text: 'ชนิดรถ', color: css('--muted'), font: { family: FONT, size: 12 } };
+    o.scales.x.ticks.callback = function (v) { return Number(v).toLocaleString('en-US'); };
+    o.scales.y.ticks.font = { family: FONT, size: 12 }; o.scales.y.ticks.padding = 6;
+    o.scales.y.ticks.color = css('--fg');
+    mk('cUnavail', { type: 'bar', data: { labels: top.map(function (x) { var s = shortOf(x.r.type); return s && s !== x.r.type ? [x.r.type, s] : [x.r.type]; }),
+      datasets: [{ data: top.map(function (x) { return x.u; }), backgroundColor: top.map(function (x) { return colorFor(x.r.cat); }), borderRadius: 3, barThickness: 20 }] },
+      options: o, plugins: [valuePlugin(function (v) { return v.toLocaleString('en-US') + ' คัน'; }, { horizontal: true, size: 12 })] });
+    var cats = []; top.forEach(function (x) { if (cats.indexOf(x.r.cat) < 0) cats.push(x.r.cat); });
+    $('unLegend').innerHTML = cats.map(function (c) { return '<span><i style="background:' + colorFor(c) + '"></i>' + esc(c) + '</span>'; }).join('');
+    return { list: list, top: top, tot: tot };
+  }
+
+  function relYearFor(cat, Y) {
+    var ys = items(cat).filter(function (r) { return r.year <= Y && relOk(r); }).map(function (r) { return r.year; });
+    return ys.length ? Math.max.apply(null, ys) : null;
+  }
+  function recommend(r, avMed, relMed) {
+    var lowA = r.av < avMed, lowR = r.rel < relMed;
+    if (lowA && lowR) return { k: 1, l: 'ลำดับแรก', t: 'ชำรุดบ่อยและพร้อมใช้ต่ำ: วิเคราะห์ระบบที่ชำรุดซ้ำ พิจารณาซ่อมใหญ่หรือปรับปรุงสภาพ' };
+    if (lowA) return { k: 2, l: 'เร่งรอบซ่อม', t: 'ชำรุดไม่บ่อยแต่พร้อมใช้ต่ำ: ลดเวลาซ่อมค้าง จัดการอะไหล่ คิวเข้าโรงงาน' };
+    if (lowR) return { k: 2, l: 'ซ่อมเชิงป้องกัน', t: 'พร้อมใช้ดีแต่ชำรุดบ่อย: ถี่รอบตรวจ เปลี่ยนชิ้นส่วนเสื่อมก่อนกำหนด' };
+    return { k: 4, l: 'ปกติ', t: 'คงรอบซ่อมเดิม ติดตามแนวโน้ม' };
+  }
+  var TKEY = 'rolling-stock-targets-v1', targets = { loco: {}, rail: {} };
+  try { var _t = JSON.parse(localStorage.getItem(TKEY) || 'null'); if (_t) targets = { loco: _t.loco || {}, rail: _t.rail || {} }; } catch (e) {}
+  function saveTargets() { try { localStorage.setItem(TKEY, JSON.stringify(targets)); } catch (e) {} }
+  function quadChart(id, cat, Y) {
+    var yr = relYearFor(cat, Y);
+    if (!yr) { mk(id, { type: 'bubble', data: { datasets: [] }, options: baseOpts('') }); return { yr: null, list: [] }; }
+    var all = items(cat), cur = all.filter(function (r) { return r.year === yr && relOk(r) && isNum(r.av); });
+    var tg = targets[id === 'qLoco' ? 'loco' : 'rail'] || {};
+    var avMed = isNum(tg.av) ? tg.av : median(cur.map(function (r) { return r.av; })), relMed = isNum(tg.rel) ? tg.rel : median(cur.map(function (r) { return r.rel; }));
+    var avCustom = isNum(tg.av), relCustom = isNum(tg.rel);
+    var list = cur.map(function (r) {
+      var prev = all.filter(function (x) { return x.type === r.type && x.year < yr && relOk(x); }).sort(function (a, b) { return b.year - a.year; })[0];
+      return { r: r, yr: yr, rec: recommend(r, avMed, relMed), prev: prev };
+    });
+    var keyEl = $(id === 'qLoco' ? 'keyLoco' : 'keyRail'); if (keyEl) keyEl.innerHTML = cur.map(function (r) { var g = glossOf(r.type); return '<div><b>' + esc(r.type) + (g && g.g ? '*' : '') + '</b><span>' + esc(g ? g.th : r.type) + '</span></div>'; }).join('') + (cur.some(function (r) { var g = glossOf(r.type); return g && g.g; }) ? '<div style="font-size:11.5px">* รายงานไม่ระบุชื่อเต็ม คำอธิบายใส่ตามความเข้าใจ ควรยืนยันกับฝ่ายการช่างกล</div>' : '');
+    var pts = cur.map(function (r) { return { x: r.av, y: r.rel, r: Math.max(5, Math.min(16, Math.sqrt(r.num || 1) * 1.3)), t: r.type }; });
+    var o = baseOpts('');
+    o.plugins.legend.display = false;
+    o.interaction = { mode: 'nearest', intersect: true };
+    o.layout = { padding: { right: 60, top: 12 } };
+    o.plugins.tooltip.callbacks = {
+      title: function (it) { var d = it[0].raw; return d.t + ' · ' + nameOf(d.t); },
+      label: function (c) { return ['Availability ' + fmt(c.raw.x, 1) + '%', 'Reliability ' + num0(c.raw.y) + ' กม./ครั้ง']; } };
+    o.scales.x.type = 'linear'; o.scales.x.min = 0; o.scales.x.max = 100; o.scales.x.ticks.stepSize = 20;
+    o.scales.x.ticks.callback = function (v) { return v + '%'; };
+    o.scales.x.title = { display: true, text: 'Availability (%) — ยิ่งสูงยิ่งพร้อมใช้', color: css('--muted'), font: { family: FONT, size: 12 } };
+    o.scales.y.title = { display: true, text: 'Reliability (กม./ครั้ง) — ยิ่งสูงยิ่งชำรุดน้อย', color: css('--muted'), font: { family: FONT, size: 12 } };
+    var vs = cur.map(function (r) { return r.rel; });
+    o.scales.y.min = 0; o.scales.y.max = niceMax(Math.max.apply(null, vs.concat([relMed])) * 1.12); o.scales.y.ticks.callback = function (v) { return Number(v).toLocaleString('en-US'); };
+    var colors = list.map(function (x) { return x.rec.k === 1 ? css('--crit') : x.rec.k === 2 ? css('--warn') : css('--c1'); });
+    var guide = { id: 'guide', beforeDatasetsDraw: function (chart) {
+      var a = chart.chartArea, ctx = chart.ctx, xs = chart.scales.x, ys = chart.scales.y;
+      ctx.save();
+      ctx.fillStyle = hexA(css('--crit'), 0.07);
+      ctx.fillRect(a.left, ys.getPixelForValue(relMed), xs.getPixelForValue(avMed) - a.left, a.bottom - ys.getPixelForValue(relMed));
+      ctx.strokeStyle = css('--muted'); ctx.setLineDash([5, 4]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(xs.getPixelForValue(avMed), a.top); ctx.lineTo(xs.getPixelForValue(avMed), a.bottom);
+      ctx.moveTo(a.left, ys.getPixelForValue(relMed)); ctx.lineTo(a.right, ys.getPixelForValue(relMed)); ctx.stroke();
+      ctx.setLineDash([]); ctx.fillStyle = css('--crit'); ctx.font = '600 11px ' + FONT; ctx.textAlign = 'left';
+      ctx.fillText('โซนควรดูก่อน', a.left + 8, a.bottom - 8);
+      ctx.fillStyle = css('--muted'); ctx.font = '11px ' + FONT;
+      var xl = (avCustom ? 'เป้า ' : 'ค่ากลาง ') + fmt(avMed, 1) + '%', yl = (relCustom ? 'เป้า ' : 'ค่ากลาง ') + num0(relMed);
+      ctx.textAlign = 'left'; var xx = xs.getPixelForValue(avMed); if (xx + 8 + ctx.measureText(xl).width > a.right) { ctx.textAlign = 'right'; xx -= 8; } else xx += 4; ctx.fillText(xl, xx, a.top + 10);
+      ctx.textAlign = 'right'; ctx.fillText(yl, a.right - 4, ys.getPixelForValue(relMed) - 5); ctx.restore(); } };
+    var labels = { id: 'ql', afterDatasetsDraw: function (chart) {
+      var ctx = chart.ctx, placed = [], a = chart.chartArea; ctx.save(); ctx.fillStyle = css('--fg'); ctx.font = '600 12px ' + FONT; ctx.textBaseline = 'middle';
+      function hit(r) { return placed.some(function (q) { return r.x < q.x + q.w && r.x + r.w > q.x && r.y < q.y + q.h && r.y + r.h > q.y; }); }
+      chart.getDatasetMeta(0).data.forEach(function (pt, j) {
+        var d = pts[j], w = ctx.measureText(d.t).width, rr = d.r, h = 14;
+        var cands = [[pt.x + rr + 5, pt.y, 'left'], [pt.x - rr - 5, pt.y, 'right'], [pt.x, pt.y - rr - 9, 'center'], [pt.x, pt.y + rr + 9, 'center']], pick = cands[0];
+        for (var i = 0; i < cands.length; i++) { var c = cands[i], x0 = c[2] === 'left' ? c[0] : c[2] === 'right' ? c[0] - w : c[0] - w / 2, rect = { x: x0, y: c[1] - h / 2, w: w, h: h };
+          if (!hit(rect) && rect.x >= a.left - 4 && rect.x + w <= chart.width) { pick = c; placed.push(rect); break; } if (i === cands.length - 1) placed.push(rect); }
+        ctx.textAlign = pick[2]; ctx.fillText(d.t, pick[0], pick[1]);
+      }); ctx.restore(); } };
+    mk(id, { type: 'bubble', data: { datasets: [{ data: pts, backgroundColor: colors.map(function (c) { return hexA(c, 0.55); }), borderColor: colors, borderWidth: 1.5 }] }, options: o, plugins: [guide, labels] });
+    return { yr: yr, list: list };
+  }
+  function renderReliability(Y) {
+    var a = quadChart('qLoco', CAT.loco, Y), b = quadChart('qRail', CAT.rail, Y);
+    var notes = [];
+    if (a.yr && a.yr !== Y) notes.push('รถจักรใช้ข้อมูลปี ' + a.yr + ' (ปี ' + Y + ' ค่า Reliability ตรวจสอบข้อมูล)');
+    if (b.yr && b.yr !== Y) notes.push('ดีเซลรางใช้ข้อมูลปี ' + b.yr);
+    $('rlYearNote').textContent = notes.length ? notes.join(' · ') : 'ข้อมูลปี ' + Y;
+    var list = a.list.concat(b.list).sort(function (x, y) { return (x.rec.k - y.rec.k) || (x.r.rel - y.r.rel); });
+    var shown = list.filter(function (x) { return x.rec.k < 4; });
+    $('prioBody').innerHTML = shown.length ? shown.map(function (x) {
+      var r = x.r, ch = '–';
+      if (x.prev) { var d = (r.rel - x.prev.rel) / x.prev.rel * 100; ch = '<span style="color:var(' + (d < -10 ? '--crit' : d > 10 ? '--good' : '--muted') + ')">' + (d > 0 ? '+' : '') + fmt(d, 0) + '%</span><div class="tmeta">เทียบปี ' + x.prev.year + '</div>'; }
+      return '<tr><td><span class="rk r' + x.rec.k + '">' + esc(x.rec.l) + '</span></td><td><b>' + esc(r.type) + '</b> ' + trendPill(trendOf(r.cat, r.type)) + '<div class="tmeta">' + esc(nameOf(r.type)) + '</div></td>' +
+        '<td class="n">' + num0(r.num) + '</td><td class="n">' + fmt(r.av, 1) + '%</td><td class="n">' + num0(r.rel) + '</td><td class="n">' + ch + '</td><td>' + esc(x.rec.t) + '</td></tr>';
+    }).join('') : '<tr><td colspan="7" class="empty">ไม่มีชนิดรถที่ต้องเร่งดำเนินการ</td></tr>';
+    return list;
+  }
+
+  var rtSel = null;
+  /* พิจารณาแนวโน้ม Reliability ของชนิดรถ จากปีที่ข้อมูลใช้ได้ (ตัดปีที่ตรวจสอบข้อมูล) */
+  function trendOf(cat, type) {
+    var pts = items(cat).filter(function (r) { return r.type === type && relOk(r); }).sort(function (a, b) { return a.year - b.year; });
+    var o = { n: pts.length, pts: pts };
+    if (pts.length < 2) { o.k = 'na'; o.label = 'ข้อมูลไม่พอ'; o.tone = 'na'; o.action = 'มีข้อมูลที่ใช้ได้ไม่ถึง 2 ปี ยังประเมินแนวโน้มไม่ได้ ควรเก็บสถิติต่อเนื่อง'; return o; }
+    var f = pts[0], l = pts[pts.length - 1], span = l.year - f.year;
+    o.first = f; o.last = l; o.total = (l.rel - f.rel) / f.rel * 100;
+    o.cagr = (Math.pow(l.rel / f.rel, 1 / span) - 1) * 100;
+    var vals = pts.map(function (p) { return p.rel; }); o.min = Math.min.apply(null, vals); o.max = Math.max.apply(null, vals);
+    o.ratio = o.max / o.min;
+    if (pts.length >= 3) { var xs0 = pts.map(function (p) { return p.year; }), ym0 = vals.reduce(function (a, b) { return a + b; }, 0) / vals.length, xm0 = xs0.reduce(function (a, b) { return a + b; }, 0) / xs0.length, sxx0 = 0, sxy0 = 0;
+      xs0.forEach(function (v, i) { sxx0 += (v - xm0) * (v - xm0); sxy0 += (v - xm0) * (vals[i] - ym0); });
+      o.xm = xm0; o.ym = ym0; o.slope = sxx0 ? sxy0 / sxx0 : 0; o.slopePct = o.slope / ym0 * 100; }
+    var pv = pts[pts.length - 2]; o.lastDrop = (l.rel - pv.rel) / pv.rel * 100; o.prevYear = pv.year;
+    o.gaps = []; for (var gy = f.year + 1; gy < l.year; gy++) if (!pts.some(function (p) { return p.year === gy; })) o.gaps.push(gy);
+    o.minYear = pts.filter(function (p) { return p.rel === o.min; })[0].year; o.maxYear = pts.filter(function (p) { return p.rel === o.max; })[0].year;
+    var mono = true; for (var i = 1; i < pts.length; i++) if (pts[i].rel >= pts[i - 1].rel) mono = false;
+    var lastIsMin = l.rel === o.min && pts.length > 2;
+    if (o.cagr <= -10) {
+      if (mono && pts.length > 2) { o.k = 'down2'; o.label = 'ลดลงต่อเนื่อง'; o.tone = 'bad'; o.action = 'เสื่อมลงทุกปีที่มีข้อมูล เร่งหาสาเหตุชำรุดซ้ำ ปรับรอบซ่อมให้ถี่ขึ้น และพิจารณาซ่อมใหญ่ก่อนค่าตกต่ำกว่านี้'; }
+      else { o.k = 'down'; o.label = 'ลดลง'; o.tone = 'bad'; o.action = (lastIsMin ? 'ปีล่าสุดต่ำสุดในช่วงข้อมูล ' : '') + 'ควรตรวจสาเหตุที่ชำรุดเพิ่มขึ้น ทบทวนรอบซ่อมและคุณภาพอะไหล่'; }
+    } else if (o.cagr >= 10) { o.k = 'up'; o.label = 'ดีขึ้น'; o.tone = 'good'; o.action = 'ชำรุดน้อยลง ควรถอดบทเรียนมาตรการซ่อมที่ใช้ และคงรอบซ่อมไว้ ไม่ควรลดงบซ่อมทันที'; }
+    else if (o.lastDrop <= -25) { o.k = 'drop'; o.label = 'ปีล่าสุดตกแรง'; o.tone = 'warn'; o.action = 'ภาพรวมหลายปียังทรงตัว แต่ปีล่าสุดตกจากปีก่อน ' + fmt(Math.abs(o.lastDrop), 0) + '% ควรตรวจว่าเป็นเหตุครั้งเดียวหรือเริ่มเสื่อม และรอดูข้อมูลปีถัดไป (ถ้าปีถัดไปยังต่ำอีก ให้ถือว่าเริ่มเสื่อม)'; }
+    else if (o.ratio > 1.8) { o.k = 'vol'; o.label = 'ผันผวนสูง'; o.tone = 'warn'; o.action = 'ค่าแกว่งระหว่างปีมาก ควรตรวจสาเหตุเป็นปีๆ (เหตุขัดข้องรุนแรงครั้งเดียว ระยะวิ่งต่อปีเปลี่ยน หรือวิธีนับเปลี่ยน) ก่อนปรับแผน'; }
+    else { o.k = 'flat'; o.label = 'ทรงตัว'; o.tone = 'ok'; o.action = 'ค่าใกล้เคียงเดิมตลอดช่วงข้อมูล คงรอบซ่อมเดิมและติดตามต่อ'; }
+    return o;
+  }
+  function trendPill(tr) { return '<span class="pill ' + (tr.tone === 'bad' ? 'bad' : tr.tone === 'warn' ? 'flag' : tr.tone === 'good' ? 'ok' : 'na') + '">' + esc(tr.label) + '</span>'; }
+  function renderRelTypes() {
+    var cats = [CAT.loco, CAT.rail], ys = years(), types = [];
+    cats.forEach(function (c) { var seen = {}; items(c).forEach(function (r) { var k = c + '|' + r.type; if (!seen[r.type] && items(c).some(function (x) { return x.type === r.type && isNum(x.rel); })) { seen[r.type] = 1; types.push({ cat: c, type: r.type }); } }); });
+    function cell(c, t, y) { var r = items(c).filter(function (x) { return x.year === y && x.type === t; })[0]; if (!r) return { v: null, k: '–' }; if (!isNum(r.rel)) return { v: null, k: '–' }; if (!relOk(r)) return { v: null, k: '<span class="tmeta">ตรวจสอบข้อมูล*</span>' }; return { v: r.rel, k: num0(r.rel) }; }
+    if (!rtSel || !types.some(function (x) { return x.type === rtSel; })) rtSel = types.length ? types[0].type : null;
+    var pk = $('rtPick'), psig = types.map(function (x) { return x.type; }).join('|');
+    if (pk.getAttribute('data-sig') !== psig) { pk.innerHTML = types.map(function (x) { return '<option value="' + esc(x.type) + '">' + esc(x.type) + ' · ' + esc(x.cat) + '</option>'; }).join(''); pk.setAttribute('data-sig', psig); }
+    pk.value = rtSel || '';
+    $('rtHead').innerHTML = '<tr><th>ชนิดรถ</th>' + ys.map(function (y) { return '<th class="n">' + y + '</th>'; }).join('') + '<th class="n">เปลี่ยนแปลง</th><th>แนวโน้ม</th></tr>';
+    $('rtBody').innerHTML = types.map(function (x) {
+      var cs = ys.map(function (y) { return cell(x.cat, x.type, y); }), vals = cs.filter(function (c) { return c.v != null; });
+      var ch = '–'; if (vals.length > 1) { var d = (vals[vals.length - 1].v - vals[0].v) / vals[0].v * 100; ch = '<span style="color:var(' + (d < -10 ? '--crit' : d > 10 ? '--good' : '--muted') + ')">' + (d > 0 ? '+' : '') + fmt(d, 0) + '%</span>'; }
+      var minV = vals.length ? Math.min.apply(null, vals.map(function (c) { return c.v; })) : null;
+      return '<tr data-t="' + esc(x.type) + '" style="cursor:pointer;' + (x.type === rtSel ? 'background:var(--surface2)' : '') + '"><td><b>' + esc(x.type) + '</b><div class="tmeta">' + esc(x.cat) + ' · ' + esc(nameOf(x.type)) + '</div></td>' +
+        cs.map(function (c) { return '<td class="n"' + (c.v != null && c.v === minV && vals.length > 1 ? ' style="color:var(--crit);font-weight:600"' : '') + '>' + c.k + '</td>'; }).join('') + '<td class="n">' + ch + '</td><td>' + trendPill(trendOf(x.cat, x.type)) + '</td></tr>';
+    }).join('');
+    var x = types.filter(function (a) { return a.type === rtSel; })[0]; if (!x) return;
+    $('rtTitle').textContent = x.type + ' · ' + nameOf(x.type);
+    var data = ys.map(function (y) { return cell(x.cat, x.type, y).v; });
+    var o = baseOpts('Reliability (กม./ครั้ง)'); o.plugins.legend.display = false;
+    o.scales.x.title = { display: true, text: 'ปีงบประมาณ (พ.ศ.)', color: css('--muted'), font: { family: FONT, size: 12 } };
+    var mx = Math.max.apply(null, data.filter(function (v) { return v != null; }).concat([1]));
+    o.scales.y.min = 0; o.scales.y.max = niceMax(mx * 1.15); o.scales.y.ticks.callback = function (v) { return Number(v).toLocaleString('en-US'); };
+    o.plugins.tooltip.callbacks = { title: function (it) { return x.type + ' · ' + nameOf(x.type) + ' · ' + it[0].label; }, label: function (c) { if (c.dataset.type === 'line') return c.dataset.label; var r = items(x.cat).filter(function (z) { return z.year === Number(c.label) && z.type === x.type; })[0], u = unitLine(r), l = num0(c.parsed.y) + ' กม./ครั้ง'; return u ? [l, u] : l; } };
+    var tr = trendOf(x.cat, x.type), ds = [{ type: 'bar', label: 'Reliability', data: data, backgroundColor: css('--c1'), borderRadius: 3, order: 2 }];
+    if (tr.n >= 3) {
+      ds.push({ type: 'line', label: 'เส้นแนวโน้มเชิงเส้น (ทุกปีที่มีข้อมูล)', data: ys.map(function (y) { return data[ys.indexOf(y)] == null ? null : Math.max(0, tr.ym + tr.slope * (y - tr.xm)); }), borderColor: css('--accent'), backgroundColor: css('--accent'), borderDash: [6, 4], borderWidth: 2, pointRadius: 3, spanGaps: true, order: 1, noLabels: true });
+      o.plugins.legend.display = true;
+    }
+    mk('cType', { type: 'bar', data: { labels: ys.map(String), datasets: ds }, options: o, plugins: [valuePlugin(function (v) { return num0(v); }, { size: 12 })] });
+    var det = $('rtDetail'), col = tr.tone === 'bad' ? '--crit' : tr.tone === 'warn' ? '--warn' : tr.tone === 'good' ? '--good' : '--muted';
+    det.style.setProperty('--tc', css(col));
+    if (tr.n < 2) det.innerHTML = '<h4>การพิจารณาแนวโน้ม: ' + esc(tr.label) + '</h4><div>' + esc(tr.action) + '</div>';
+    else det.innerHTML = '<h4>การพิจารณาแนวโน้ม: ' + trendPill(tr) + '</h4><dl>' +
+      '<dt>ช่วงข้อมูล</dt><dd>ปี ' + tr.first.year + ' → ' + tr.last.year + ' (' + tr.n + ' ปีที่ใช้ได้)</dd>' +
+      '<dt>เปลี่ยนรวม</dt><dd>' + (tr.total > 0 ? '+' : '') + fmt(tr.total, 0) + '% (' + num0(tr.first.rel) + ' → ' + num0(tr.last.rel) + ' กม./ครั้ง)</dd>' +
+      '<dt>ปีล่าสุดเทียบปี ' + tr.prevYear + '</dt><dd>' + (tr.lastDrop > 0 ? '+' : '') + fmt(tr.lastDrop, 0) + '%</dd>' +
+      '<dt>เฉลี่ยต่อปี (ปลายทาง)</dt><dd>' + (tr.cagr > 0 ? '+' : '') + fmt(tr.cagr, 1) + '%</dd>' +
+      (tr.slope != null ? '<dt>ความชันเส้นประ</dt><dd>' + (tr.slopePct > 0 ? '+' : '') + fmt(tr.slopePct, 1) + '% ต่อปี (เทียบค่าเฉลี่ย)</dd>' : '') + '<dt>สูงสุด / ต่ำสุด</dt><dd>' + num0(tr.max) + ' (ปี ' + tr.maxYear + ') / ' + num0(tr.min) + ' (ปี ' + tr.minYear + ')</dd></dl>' +
+      '<div><b>แนวทาง:</b> ' + esc(tr.action) + '</div>' + (tr.slope != null && ((tr.slopePct > 2 && tr.lastDrop < -10) || (tr.slopePct < -2 && tr.lastDrop > 10)) ? '<div class="tmeta" style="margin-top:6px">เส้นประกับป้ายแนวโน้มอาจดูขัดกัน: เส้นประคือแนวเฉลี่ยทุกปี (ถูกดึงโดยปีที่ ' + (tr.slopePct > 0 ? 'สูงผิดปกติ' : 'ต่ำผิดปกติ') + ' ' + (tr.slopePct > 0 ? tr.maxYear : tr.minYear) + ') ส่วนป้ายดูการเปลี่ยนจากปีก่อนหน้าถึงปีล่าสุดและค่าต้นช่วง-ปลายช่วง</div>' : '') + (tr.n === 2 ? '<div class="tmeta" style="margin-top:6px">มีข้อมูลเพียง 2 ปี ข้อสรุปยังไม่หนักแน่น</div>' : '') + (tr.gaps.length ? '<div class="tmeta" style="margin-top:6px">ไม่มีข้อมูลที่ใช้ได้ปี ' + tr.gaps.join(', ') + ' (รายงานไม่มีหรือตรวจสอบข้อมูล) การเปลี่ยนแปลงข้ามช่วงนี้อาจมีขึ้นลงที่มองไม่เห็น</div>' : '');
+  }
+  function renderMsgs(Y, stats, unav, prio) {
+    var m = [];
+    var worst = stats.filter(function (o) { return o.d != null; }).sort(function (a, b) { return a.d - b.d; })[0];
+    if (worst && worst.d < -0.05) {
+      var wt = unav.list.filter(function (x) { return x.r.cat === worst.s.cat; }).slice(0, 2);
+      m.push({ h: esc(worst.s.label) + ' ความพร้อมใช้ลดลงมากที่สุด', p: 'ลดจาก <b>' + fmt(worst.prev.av, 1) + '%</b> (ปี ' + worst.py + ') เหลือ <b>' + fmt(worst.cur.av, 1) + '%</b>' +
+        (wt.length ? ' ชนิดที่ไม่พร้อมใช้มากสุดคือ ' + wt.map(function (x) { return '<b>' + esc(x.r.type) + '</b> ' + x.u + ' คัน'; }).join(' และ ') : '') + ' ควรทบทวนแผนเข้าซ่อมของหมวดนี้' });
+    } else m.push({ h: 'ความพร้อมใช้ไม่ลดลงในทุกหมวด', p: 'คงแผนเดิมและติดตามรายเดือน' });
+    if (unav.top.length) {
+      var t3 = unav.top.slice(0, 3), s3 = t3.reduce(function (s, x) { return s + x.u; }, 0);
+      m.push({ h: 'รถไม่พร้อมใช้กระจุกใน ' + t3.length + ' ชนิด', p: t3.map(function (x) { return '<b>' + esc(x.r.type) + '</b> ' + x.u + ' คัน'; }).join(', ') +
+        ' รวม <b>' + s3 + ' คัน</b> (' + fmt(s3 / unav.tot * 100, 0) + '% ของทั้งหมด) การเร่งซ่อมเฉพาะกลุ่มนี้ให้ผลเร็วที่สุด' });
+    }
+    var declining = prio.filter(function (x) { var k = trendOf(x.r.cat, x.r.type).k; return k === 'down2' || k === 'down'; });
+    var p1 = prio.filter(function (x) { return x.rec.k === 1; });
+    if (p1.length) m.push({ h: 'ชนิดที่ควรพิจารณาซ่อมใหญ่', p: p1.map(function (x) { return '<b>' + esc(x.r.type) + '</b> (พร้อมใช้ ' + fmt(x.r.av, 0) + '%, ' + num0(x.r.rel) + ' กม./ครั้ง)'; }).join(', ') +
+      ' ชำรุดบ่อยและพร้อมใช้ต่ำกว่าค่ากลางของกลุ่ม ควรวิเคราะห์ระบบที่ชำรุดซ้ำก่อนตั้งงบซ่อมปีถัดไป' + (declining.length ? ' · Reliability มีแนวโน้มลดลง: <b>' + declining.map(function (x) { return esc(x.r.type); }).join(', ') + '</b>' : '') });
+    else m.push({ h: 'ยังไม่มีชนิดที่ต่ำทั้งสองด้าน', p: 'ดูตารางลำดับการซ่อมบำรุงด้านล่างสำหรับชนิดที่ควรปรับรอบซ่อม' });
+    $('exMsgs').innerHTML = m.map(function (x, i) { return '<article class="msg"><div class="n">0' + (i + 1) + '</div><h3>' + x.h + '</h3><p>' + x.p + '</p></article>'; }).join('');
+  }
+
+  /* ================= BACK OFFICE ================= */
+  function status(r) {
+    if (r.flag) return { code: 'flag', label: 'ควรตรวจ', title: r.flag };
+    if (!isNum(r.num) || !isNum(r.ready)) return { code: 'na', label: 'ข้อมูลไม่ครบ', title: 'ไม่มีจำนวนหรือจำนวนพร้อมใช้' };
+    if (r.ready > r.num) return { code: 'bad', label: 'พร้อมใช้ > ที่มี', title: '' };
+    if (isNum(r.av) && r.num > 0 && Math.abs(r.ready / r.num * 100 - r.av) > 0.05) return { code: 'bad', label: 'Availability ไม่ตรง', title: '' };
+    return { code: 'ok', label: 'ปกติ', title: '' };
+  }
+  function renderHealth() {
+    var ys = years();
+    var flagged = rows.filter(function (r) { return r.flag; }).length, corr = rows.filter(function (r) { return isNum(r.avr); }).length;
+    var bad = rows.filter(function (r) { var s = status(r).code; return s === 'bad' || s === 'na'; }).length;
+    var cells = [
+      ['แถวข้อมูล', fmt(rows.length), ''], ['ปีงบประมาณ', ys.length ? ys[0] + '–' + ys[ys.length - 1] : '–', ys.length + ' ปี'],
+      ['แก้ Availability แล้ว', fmt(corr), 'corr'], ['ธงให้ยืนยันต้นฉบับ', fmt(flagged), 'flag'], ['ไม่ครบ/ไม่สอดคล้อง', fmt(bad), 'flag']
+    ];
+    $('health').innerHTML = cells.map(function (c) {
+      return '<div class="hcell"><div class="l">' + c[0] + '</div><div class="v">' + c[1] + '</div>' +
+        (c[2] === 'corr' ? '<button type="button" data-f="corr">แสดงในตาราง</button>' : c[2] === 'flag' ? '<button type="button" data-f="flag">แสดงในตาราง</button>' : '<div class="l">' + esc(c[2]) + '</div>') + '</div>';
+    }).join('');
+  }
+  var COLS = [
+    { k: 'year', l: 'ปี' }, { k: 'cat', l: 'หมวด' }, { k: 'type', l: 'ชนิด' },
+    { k: 'num', l: 'ที่มี (คัน)', n: 1 }, { k: 'ready', l: 'พร้อมใช้ (คัน)', n: 1 }, { k: 'av', l: 'Availability (%)', n: 1 },
+    { k: 'rel', l: 'Reliability (กม./ครั้ง)', n: 1 }, { k: 'age', l: 'อายุ (ปี)' }, { k: 'st', l: 'สถานะ' }
+  ];
+  function val(r, k) { return k === 'age' ? r.amin : k === 'st' ? null : r[k]; }
+  function fillFilters() {
+    var fy = $('fYear'), fc = $('fCat'), ys = years(), cats = [];
+    rows.forEach(function (r) { if (cats.indexOf(r.cat) < 0) cats.push(r.cat); });
+    var sy = ys.join(','), sc = cats.join('|');
+    if (fy.getAttribute('data-sig') !== sy) { var cy = fy.value; fy.innerHTML = '<option value="">ทุกปี</option>' + ys.map(function (y) { return '<option value="' + y + '">ปี ' + y + '</option>'; }).join(''); fy.setAttribute('data-sig', sy); fy.value = ys.map(String).indexOf(cy) >= 0 ? cy : ''; }
+    if (fc.getAttribute('data-sig') !== sc) { var cc = fc.value; fc.innerHTML = '<option value="">ทุกหมวด</option>' + cats.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join(''); fc.setAttribute('data-sig', sc); fc.value = cats.indexOf(cc) >= 0 ? cc : ''; }
+    $('dl-cat').innerHTML = Object.keys(CAT).map(function (k) { return '<option value="' + esc(CAT[k]) + '">'; }).join('');
+    var subs = {}, types = {}; rows.forEach(function (r) { if (r.sub) subs[r.sub] = 1; if (r.type) types[r.type] = 1; });
+    $('dl-sub').innerHTML = Object.keys(subs).map(function (s) { return '<option value="' + esc(s) + '">'; }).join('');
+    $('dl-type').innerHTML = Object.keys(types).map(function (s) { return '<option value="' + esc(s) + '">'; }).join('');
+  }
+  function filtered() {
+    var y = $('fYear').value, c = $('fCat').value, q = $('fText').value.trim().toLowerCase(), fl = $('fFlag').checked, fc = $('fCorr').checked;
+    var list = rows.filter(function (r) {
+      if (y && String(r.year) !== y) return false;
+      if (c && r.cat !== c) return false;
+      if (q && (r.type + ' ' + nameOf(r.type) + ' ' + r.full + ' ' + r.sub + ' ' + r.note + ' ' + r.flag).toLowerCase().indexOf(q) < 0) return false;
+      if (fl && status(r).code === 'ok') return false;
+      if (fc && !isNum(r.avr)) return false;
+      return true;
+    });
+    list.sort(function (a, b) {
+      var x = val(a, sortKey), z = val(b, sortKey), nx = x == null || x === '', nz = z == null || z === '';
+      if (nx && nz) return (a.seq || 0) - (b.seq || 0); if (nx) return 1; if (nz) return -1;
+      var d = (typeof x === 'number' && typeof z === 'number') ? x - z : String(x).localeCompare(String(z), 'th');
+      return d !== 0 ? d * sortDir : ((a.year - b.year) || ((a.seq || 0) - (b.seq || 0)));
+    });
+    return list;
+  }
+  function renderTable() {
+    $('thead').innerHTML = COLS.map(function (c) {
+      var mark = sortKey === c.k ? (sortDir > 0 ? ' ▲' : ' ▼') : '';
+      return '<th class="' + (c.n ? 'n ' : '') + (c.k === 'st' ? '' : 's') + '" data-k="' + c.k + '">' + esc(c.l) + mark + '</th>';
+    }).join('') + '<th>' + (canWrite ? 'จัดการ' : '') + '</th>';
+    var list = filtered();
+    $('rowCount').textContent = 'แสดง ' + fmt(list.length) + ' จาก ' + fmt(rows.length) + ' แถว';
+    var emp = $('empty');
+    if (!list.length) { emp.hidden = false; emp.textContent = loading ? 'กำลังโหลดข้อมูล' : rows.length ? 'ไม่มีแถวที่ตรงกับตัวกรอง' : 'ยังไม่มีข้อมูล กด "เพิ่มแถวข้อมูล" หรือ "นำเข้า CSV"'; }
+    else emp.hidden = true;
+    $('tbody').innerHTML = list.map(function (r) {
+      var st = status(r), isTot = r.rt === RT_TOT, g = glossOf(r.type);
+      var age = isNum(r.amin) ? (isNum(r.amax) && r.amax !== r.amin ? fmt(r.amin) + '–' + fmt(r.amax) : fmt(r.amin)) : '–';
+      var act = canWrite ? '<td style="white-space:nowrap"><button class="lnk" type="button" data-act="edit" data-id="' + esc(r.id) + '">แก้</button><button class="lnk danger" type="button" data-act="del" data-id="' + esc(r.id) + '">ลบ</button></td>' : '<td></td>';
+      return '<tr class="' + (isTot ? 'tot' : '') + '"><td>' + esc(r.year) + '</td><td>' + esc(r.cat) + '<div class="tmeta">' + esc(r.sub || '') + '</div></td>' +
+        '<td><div class="tname">' + esc(r.type) + (isTot ? ' <span class="tag">ยอดรวม</span>' : '') + '</div>' +
+        (g ? '<div class="tmeta">' + esc(g.th) + (g.g ? '*' : '') + '</div>' : (r.full ? '<div class="tmeta">' + esc(r.full) + '</div>' : '')) +
+        (r.flag ? '<div class="flagtxt">' + esc(r.flag) + '</div>' : '') + (r.note ? '<div class="tmeta">' + esc(r.note) + '</div>' : '') + '</td>' +
+        '<td class="n">' + fmt(r.num, isNum(r.num) && r.num % 1 ? 2 : 0) + '</td><td class="n">' + fmt(r.ready, isNum(r.ready) && r.ready % 1 ? 2 : 0) + '</td>' +
+        '<td class="n">' + fmt(r.av, 2) + (isNum(r.avr) ? '<div class="tmeta">รายงานเดิม ' + fmt(r.avr, 2) + '</div>' : '') + '</td>' +
+        '<td class="n">' + (isNum(r.rel) ? num0(r.rel) : '–') + '</td><td>' + age + '</td><td><span class="pill ' + st.code + '" title="' + esc(st.title) + '">' + esc(st.label) + '</span></td>' + act + '</tr>';
+    }).join('');
+  }
+  function renderIssues() {
+    var list = rows.filter(function (r) { return status(r).code !== 'ok' || (isNum(r.avr) && Math.abs(r.avr - r.av) > 3); })
+      .sort(function (a, b) { return b.year - a.year || String(a.cat).localeCompare(String(b.cat), 'th'); });
+    $('issues').innerHTML = list.length ? list.slice(0, 40).map(function (r) {
+      var st = status(r), txt = r.flag || (st.code === 'na' ? 'ไม่มีจำนวนหรือจำนวนพร้อมใช้ คำนวณ Availability ไม่ได้' : st.code === 'bad' ? st.label : 'Availability ต่างจากรายงานเกิน 3 จุด');
+      return '<li><span class="pill ' + (st.code === 'ok' ? 'flag' : st.code) + '">' + r.year + '</span><div><b>' + esc(r.type) + '</b> <span class="tmeta">' + esc(r.cat) + '</span><div class="tmeta">' + esc(txt) + '</div></div>' +
+        (canWrite ? '<button class="lnk" type="button" data-act="edit" data-id="' + esc(r.id) + '">แก้</button>' : '<span></span>') + '</li>';
+    }).join('') : '<li><span></span><div class="tmeta">ไม่มีรายการที่ต้องตรวจ</div><span></span></li>';
+  }
+  function renderExplorer() {
+    var sel = $('exCat'), cats = Object.keys(CAT).map(function (k) { return CAT[k]; }).filter(function (c) { return items(c).length; });
+    var sig = cats.join('|');
+    if (sel.getAttribute('data-sig') !== sig) { var cur = sel.value; sel.innerHTML = cats.map(function (c) { return '<option value="' + esc(c) + '">' + esc(c) + '</option>'; }).join(''); sel.setAttribute('data-sig', sig); if (cats.indexOf(cur) >= 0) sel.value = cur; }
+    var cat = sel.value, its = items(cat).slice().sort(function (a, b) { return (a.seq || 0) - (b.seq || 0); }), types = [], ys = [];
+    its.forEach(function (r) { if (types.indexOf(r.type) < 0) types.push(r.type); if (ys.indexOf(r.year) < 0) ys.push(r.year); });
+    ys.sort(function (a, b) { return a - b; });
+    var all = [];
+    var ds = ys.map(function (y, i) {
+      return { label: String(y), backgroundColor: pal(i), borderWidth: 0, data: types.map(function (t) {
+        var r = its.filter(function (x) { return x.year === y && x.type === t; })[0]; if (!r) return null;
+        var v = exMetric === 'av' ? r.av : (relOk(r) ? r.rel : null); if (isNum(v)) all.push(v); return isNum(v) ? v : null; }) };
+    });
+    var o = baseOpts(exMetric === 'av' ? 'Availability (%)' : 'Reliability (กม./ครั้ง)');
+    o.scales.x.title = { display: true, text: 'ชนิดรถ', color: css('--muted'), font: { family: FONT, size: 12 } };
+    o.plugins.tooltip.callbacks = { title: function (it) { var t = it[0].label; return t + ' · ' + nameOf(t); }, label: function (c) { var ty = types[c.dataIndex], r = its.filter(function (x) { return x.year === Number(c.dataset.label) && x.type === ty; })[0], l = c.dataset.label + ': ' + (exMetric === 'av' ? fmt(c.parsed.y, 1) + '%' : (isNum(c.parsed.y) ? num0(c.parsed.y) + ' กม./ครั้ง' : '–')), u = unitLine(r); return exMetric === 'av' || !u ? (exMetric === 'av' && u ? c.dataset.label + ': ' + u : l) : [l, '   ' + u]; } };
+    var useLog = false;
+    if (exMetric === 'av') { o.scales.y.min = 0; o.scales.y.max = 100; o.scales.y.ticks.stepSize = 20; }
+    else if (all.length) { { o.scales.y.min = 0; o.scales.y.max = niceMax(Math.max.apply(null, all) * 1.28); o.scales.y.ticks.callback = function (v) { return Number(v).toLocaleString('en-US'); }; } }
+    var noData = !all.length;
+    o.layout = { padding: { top: exMetric === 'av' ? 38 : 8 } };
+    if (noData) { o.scales.y.min = 0; o.scales.y.max = 100; o.scales.y.ticks.stepSize = 20; }
+    var emptyMsg = { id: 'emptyMsg', afterDraw: function (chart) { if (!noData) return; var a = chart.chartArea, c = chart.ctx; c.save(); c.fillStyle = css('--muted'); c.font = '14px ' + FONT; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('ไม่มีข้อมูล Reliability ของหมวดนี้ในรายงาน', (a.left + a.right) / 2, (a.top + a.bottom) / 2); c.restore(); } };
+    function wrapName(s, n) { var w = String(s).split(' '), out = [], cur = ''; w.forEach(function (x) { if (cur && (cur + ' ' + x).length > n) { out.push(cur); cur = x; } else cur = cur ? cur + ' ' + x : x; }); if (cur) out.push(cur); return out; }
+    var lbls = types.map(function (ty) { var nm = tr(shortOf(ty) || ''); return nm && nm !== ty && nm !== tr(ty) ? [ty].concat(wrapName(nm, LANG === 'en' ? 15 : 13)) : [tr(ty)]; });
+    o.scales.x.ticks.maxRotation = 0; o.scales.x.ticks.minRotation = 0; o.scales.x.ticks.autoSkip = false; o.scales.x.ticks.font = { family: FONT, size: 11 };
+    o.plugins.tooltip.callbacks.title = function (it) { var ty = types[it[0].dataIndex]; return ty + ' · ' + nameOf(ty); };
+    mk('cEx', { type: 'bar', data: { labels: lbls, datasets: ds }, options: o, plugins: [emptyMsg, valuePlugin(function (v) { return exMetric === 'av' ? fmt(v, 1) : num0(v); }, { rotate: true, size: 11 })] });
+    $('exHint').textContent = exMetric === 'rel' ? 'ตัดค่าที่ต้องตรวจสอบข้อมูลออก' : 'Availability ที่แก้แล้ว (พร้อมใช้ ÷ ที่มี)';
+  }
+  function renderGlossary() {
+    var seen = {}, out = [];
+    Object.keys(CAT).forEach(function (k) { items(CAT[k]).forEach(function (r) { if (!seen[r.type]) { seen[r.type] = 1; out.push(r); } }); });
+    $('glossary').innerHTML = out.map(function (r) { var g = glossOf(r.type); return '<div><b>' + esc(r.type) + (g && g.g ? '*' : '') + '</b><span>' + esc(g ? g.th : (r.full || '–')) + '</span></div>'; }).join('');
+  }
+  function renderData() { fillFilters(); renderHealth(); renderTable(); renderIssues(); renderGlossary(); }
+
+
+  /* ================= routing ================= */
+  var curView = (function () { try { return location.hash === '#data' ? 'data' : 'exec'; } catch (e) { return 'exec'; } })();
+  function view() { return EXEC_ONLY ? 'exec' : curView; }
+  function setView(v) {
+    if (EXEC_ONLY) return;
+    curView = v;
+    try { if (history && history.replaceState) history.replaceState(null, '', '#' + v); else location.hash = v; } catch (e) { try { location.hash = v; } catch (e2) { /* sandboxed: state only */ } }
+    renderAll(); try { window.scrollTo(0, 0); } catch (e) { /* ignore */ }
+  }
+  function renderAll() {
+    var v = view();
+    $('viewExec').hidden = v !== 'exec'; $('viewData').hidden = v !== 'data';
+    $('navExec').setAttribute('aria-current', v === 'exec' ? 'page' : 'false');
+    $('navData').setAttribute('aria-current', v === 'data' ? 'page' : 'false');
+    document.title = tr(v === 'exec' ? 'สถิติรถจักรและล้อเลื่อน' : 'ข้อมูลหลังบ้าน · สถิติรถจักรและล้อเลื่อน');
+    if (v === 'exec') renderExec(); else renderData();
+    if (LANG === 'en') trDocument();
+  }
+
+  /* ================= storage ================= */
+  function localDb() {
+    var stores = {};
+    function seed() { return EMBED.map(function (r, i) { var o = Object.assign({}, r); o.id = 'r' + (i + 1); return o; }); }
+    function mkStore(name) {
+      var key = name === 'rows' ? STORE_KEY : STORE_KEY + '-' + name, store = null, subs = [], n = 0;
+      try { var tx = EXEC_ONLY ? null : localStorage.getItem(key) || (name === 'rows' ? localStorage.getItem(OLD_KEY) : null); if (tx) store = JSON.parse(tx); } catch (e) { store = null; }
+      if (!Array.isArray(store) || (name === 'rows' && !store.length)) store = name === 'rows' ? seed() : [];
+      function persist() { if (EXEC_ONLY) return; try { localStorage.setItem(key, JSON.stringify(store)); } catch (e) { /* storage blocked: keep in memory */ } }
+      function emit() { var snap = { docs: store.map(function (o) { return { id: o.id, data: function () { var c = Object.assign({}, o); delete c.id; return c; } }; }), metadata: { fromCache: false } }; subs.forEach(function (f) { f(snap); }); }
+      return {
+        _reset: function () { store = name === 'rows' ? seed() : []; try { localStorage.removeItem(key); if (name === 'rows') localStorage.removeItem(OLD_KEY); } catch (e) { /* ignore */ } emit(); },
+        _clear: function () { store = []; persist(); emit(); },
+        add: function (o) { var id = 'n' + Date.now() + '_' + (++n); store.push(Object.assign({ id: id }, o)); persist(); emit(); return Promise.resolve({ id: id }); },
+        doc: function (id) { return {
+          set: function (o) { store = store.map(function (x) { return x.id === id ? Object.assign({ id: id }, o) : x; }); persist(); emit(); return Promise.resolve(); },
+          delete: function () { store = store.filter(function (x) { return x.id !== id; }); persist(); emit(); return Promise.resolve(); } }; },
+        onSnapshot: function (f) { subs.push(f); setTimeout(emit, 0); return function () {}; } };
+    }
+    return {
+      reset: function () { (stores.rows || (stores.rows = mkStore('rows')))._reset(); },
+      collection: function (name) { return stores[name] || (stores[name] = mkStore(name)); } };
+  }
+  function setChip(kind, txt) { $('status').className = 'chip ' + kind; $('statusTxt').textContent = txt; }
+
+  /* ================= editing ================= */
+  function toNum(s) { if (s == null) return null; var t = String(s).replace(/,/g, '').trim(); if (t === '' || t === '-' || t === '–') return null; var n = Number(t); return isFinite(n) ? n : NaN; }
+  function validate(o) {
+    var e = [];
+    if (!isNum(o.year) || o.year < 2400 || o.year > 2700 || o.year % 1) e.push('ปีต้องเป็นปี พ.ศ. เช่น 2569');
+    if (!o.cat) e.push('ต้องระบุหมวด');
+    if (!o.type) e.push('ต้องระบุชนิด');
+    if (o.rt !== RT_ITEM && o.rt !== RT_TOT) e.push('ประเภทแถวต้องเป็น "รายการ" หรือ "ยอดรวมตามรายงาน"');
+    NUMF.forEach(function (k) { if (o[k] !== null && !isNum(o[k])) e.push(k + ' ต้องเป็นตัวเลข'); else if (isNum(o[k]) && o[k] < 0) e.push(k + ' ต้องไม่ติดลบ'); });
+    if (isNum(o.av) && o.av > 100) e.push('Availability ต้องไม่เกิน 100');
+    if (isNum(o.num) && isNum(o.ready) && o.ready > o.num) e.push('จำนวนพร้อมใช้ต้องไม่มากกว่าจำนวนที่มี');
+    if (isNum(o.amin) && isNum(o.amax) && o.amin > o.amax) e.push('อายุต่ำสุดต้องไม่มากกว่าอายุสูงสุด');
+    return e;
+  }
+  function autoAv(o) {
+    if (isNum(o.num) && isNum(o.ready) && o.num > 0 && o.ready <= o.num) {
+      var c = Math.round(o.ready / o.num * 10000) / 100;
+      if (isNum(o.av) && Math.abs(o.av - c) > 0.005 && !isNum(o.avr)) o.avr = o.av;
+      o.av = c;
+    }
+    return o;
+  }
+  function keyOf(o) { return [o.year, o.cat, o.type, o.rt].join('|'); }
+  function findDup(o, except) { var k = keyOf(o); return rows.filter(function (r) { return r.id !== except && keyOf(r) === k; })[0]; }
+  function maxSeq() { return rows.reduce(function (m, r) { return Math.max(m, r.seq || 0); }, 0); }
+  function openRow(id) {
+    editingId = id || null;
+    var r = id ? rows.filter(function (x) { return x.id === id; })[0] : null, ys = years();
+    $('rowTitle').textContent = r ? 'แก้ไขแถวข้อมูล' : 'เพิ่มแถวข้อมูล';
+    FIELDS.forEach(function (k) { var v = r ? r[k] : (k === 'rt' ? RT_ITEM : k === 'year' ? (ys.length ? ys[ys.length - 1] + 1 : '') : ''); $('fm-' + k).value = v == null ? '' : v; });
+    $('rowErr').textContent = ''; $('rowModal').hidden = false; $('fm-year').focus();
+  }
+  function readForm() { var o = {}; FIELDS.forEach(function (k) { var v = $('fm-' + k).value; o[k] = NUMF.indexOf(k) >= 0 ? toNum(v) : String(v).trim(); }); return o; }
+  async function saveRow(ev) {
+    if (ev && ev.preventDefault) ev.preventDefault();
+    if (!dbRef) { toast('ยังไม่พร้อมบันทึก'); return; }
+    var o = autoAv(readForm()), errs = validate(o);
+    if (!errs.length && findDup(o, editingId)) errs.push('มีแถวปี ' + o.year + ' ' + o.cat + ' ' + o.type + ' (' + o.rt + ') อยู่แล้ว ให้แก้ที่แถวเดิม');
+    if (errs.length) { $('rowErr').textContent = errs.join('\n'); toast(errs[0]); return; }
+    try {
+      var col = dbRef.collection('rows');
+      if (editingId) { var old = rows.filter(function (x) { return x.id === editingId; })[0]; o.seq = old && old.seq ? old.seq : maxSeq() + 1; await col.doc(editingId).set(o); }
+      else { o.seq = maxSeq() + 1; await col.add(o); }
+      $('rowModal').hidden = true; toast('บันทึกแล้ว');
+    } catch (e) { $('rowErr').textContent = 'บันทึกไม่สำเร็จ' + (e && e.code ? ' (' + e.code + ')' : ''); }
+  }
+  async function delRow(btn) {
+    if (!btn.classList.contains('armed')) { btn.classList.add('armed'); btn.textContent = 'ยืนยันลบ'; setTimeout(function () { if (btn.isConnected) { btn.classList.remove('armed'); btn.textContent = 'ลบ'; } }, 4000); return; }
+    try { await dbRef.collection('rows').doc(btn.getAttribute('data-id')).delete(); toast('ลบแล้ว'); } catch (e) { toast('ลบไม่สำเร็จ'); }
+  }
+  /* CSV */
+  function parseCSV(text) {
+    text = text.replace(/^﻿/, ''); var d = (text.split(/\r?\n/, 1)[0] || '').indexOf('\t') >= 0 ? '\t' : ',';
+    var out = [], row = [], cur = '', q = false;
+    for (var i = 0; i < text.length; i++) { var c = text[i];
+      if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+      else if (c === '"') q = true; else if (c === d) { row.push(cur); cur = ''; }
+      else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cur); cur = ''; if (row.some(function (x) { return x !== ''; })) out.push(row); row = []; }
+      else cur += c; }
+    row.push(cur); if (row.some(function (x) { return x !== ''; })) out.push(row); return out;
+  }
+  function checkImport() {
+    $('imErr').textContent = ''; $('imOk').textContent = ''; parsedImport = null; $('imGo').disabled = true;
+    var t = parseCSV($('imText').value); if (t.length < 2) { $('imErr').textContent = 'ต้องมีหัวคอลัมน์และข้อมูลอย่างน้อย 1 แถว'; return; }
+    var head = t[0].map(function (s) { return s.trim().toLowerCase(); }), miss = ['year', 'cat', 'type', 'rt'].filter(function (k) { return head.indexOf(k) < 0; });
+    if (miss.length) { $('imErr').textContent = 'ไม่พบคอลัมน์: ' + miss.join(', '); return; }
+    var objs = [], errs = [], seen = {};
+    t.slice(1).forEach(function (cells, i) {
+      var o = {}; FIELDS.forEach(function (k) { var j = head.indexOf(k), v = j >= 0 ? (cells[j] == null ? '' : cells[j]) : ''; o[k] = NUMF.indexOf(k) >= 0 ? toNum(v) : String(v).trim(); });
+      autoAv(o); var e = validate(o); if (seen[keyOf(o)]) e.push('ซ้ำกับแถวก่อนหน้าในไฟล์'); seen[keyOf(o)] = 1;
+      if (e.length) errs.push('แถวที่ ' + (i + 2) + ': ' + e.join('; ')); else objs.push(o);
+    });
+    if (errs.length) { $('imErr').textContent = errs.slice(0, 8).join('\n') + (errs.length > 8 ? '\nและอีก ' + (errs.length - 8) + ' แถว' : ''); return; }
+    var rep = objs.filter(function (o) { return findDup(o, null); }).length;
+    parsedImport = objs; $('imOk').textContent = 'ตรวจแล้ว ' + objs.length + ' แถว: เพิ่มใหม่ ' + (objs.length - rep) + ', แทนที่ ' + rep; $('imGo').disabled = false;
+  }
+  async function runImport() {
+    if (!parsedImport || !dbRef) return;
+    var col = dbRef.collection('rows'), seq = maxSeq(), done = 0; $('imGo').disabled = true;
+    try { for (var i = 0; i < parsedImport.length; i++) { var o = parsedImport[i], dup = findDup(o, null);
+        if (dup) { o.seq = dup.seq || ++seq; await col.doc(dup.id).set(o); } else { o.seq = ++seq; await col.add(o); } done++; }
+      $('imOk').textContent = 'นำเข้าเสร็จ ' + done + ' แถว'; parsedImport = null; toast('นำเข้า ' + done + ' แถวแล้ว');
+    } catch (e) { $('imErr').textContent = 'หยุดที่แถว ' + (done + 1); }
+  }
+  function csvCell(v) { var s = v == null ? '' : String(v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  async function exportCsv() {
+    var list = rows.slice().sort(function (a, b) { return (a.year - b.year) || ((a.seq || 0) - (b.seq || 0)); });
+    var text = '﻿' + [FIELDS.join(',')].concat(list.map(function (r) { return FIELDS.map(function (k) { return csvCell(r[k]); }).join(','); })).join('\r\n');
+    var name = 'rolling-stock-' + new Date().toISOString().slice(0, 10) + '.csv';
+    try {
+      if (downloads) { await downloads.save({ filename: name, data: text }); toast('ส่งออกแล้ว'); return; }
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); toast('ส่งออกแล้ว');
+    } catch (e) { if (!e || e.code !== 'declined') toast('ส่งออกไม่สำเร็จ'); }
+  }
+
+  /* ================= wiring ================= */
+  function wire() {
+    window.addEventListener('hashchange', function () { var v = location.hash === '#data' ? 'data' : 'exec'; if (v !== curView) { curView = v; renderAll(); } });
+    document.addEventListener('click', function (e) { var g = e.target.closest && e.target.closest('[data-go]'); if (g) setView(g.getAttribute('data-go')); });
+    $('exYear').addEventListener('change', function () { exYearSel = Number(this.value); renderExec(); });
+    document.querySelectorAll('.tgt').forEach(function (box) {
+      var cat = box.getAttribute('data-cat');
+      function sync() { box.querySelectorAll('input').forEach(function (i) { var v = targets[cat][i.getAttribute('data-k')]; i.value = isNum(v) ? v : ''; }); }
+      sync();
+      box.querySelectorAll('input').forEach(function (i) { i.addEventListener('input', function () {
+        var k = i.getAttribute('data-k'), v = parseFloat(i.value);
+        if (isFinite(v) && v >= 0 && (k !== 'av' || v <= 100)) targets[cat][k] = v; else delete targets[cat][k];
+        saveTargets(); renderExec(); }); });
+      box.querySelector('[data-reset]').addEventListener('click', function () { targets[cat] = {}; saveTargets(); sync(); renderExec(); });
+    });
+    $('btnFull').addEventListener('click', function () { var d = document.documentElement; try { if (!document.fullscreenElement) d.requestFullscreen().catch(function () { toast('เบราว์เซอร์นี้ไม่รองรับเต็มจอ'); }); else document.exitFullscreen(); } catch (e) { toast('เบราว์เซอร์นี้ไม่รองรับเต็มจอ'); } });
+    $('exCat').addEventListener('change', renderExplorer);
+
+    $('rtBody').addEventListener('click', function (e) { var tr = e.target.closest('tr'); if (!tr) return; rtSel = tr.getAttribute('data-t'); renderRelTypes(); try { $('relTypes').scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e2) { /* ignore */ } });
+    $('rtPick').addEventListener('change', function () { rtSel = this.value; renderRelTypes(); });
+    document.querySelectorAll('.seg button').forEach(function (b) { b.addEventListener('click', function () { exMetric = b.getAttribute('data-m'); document.querySelectorAll('.seg button').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); renderExplorer(); }); });
+    var rr = function () { renderAll(); };
+    try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', rr); } catch (e) { /* old engines */ }
+    try { new MutationObserver(rr).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }); } catch (e) { /* none */ }
+  }
+
+  async function boot() {
+    wire(); applyLangUi(); startObserver();
+    document.querySelectorAll('.lang button').forEach(function (b) { b.addEventListener('click', function () { setLang(b.getAttribute('data-l')); }); });
+    renderAll();
+    var cl = window.claude, db = null, user = null;
+    if (!EXEC_ONLY && cl && typeof cl.use === 'function') {
+      var use = function (n) { return cl.use(n).catch(function () { return null; }); };
+      var res = await Promise.all([use('db'), use('user'), use('downloads')]); db = res[0]; user = res[1]; downloads = res[2];
+    }
+    if (!db) { db = localDb(); local = true; }
+    dbRef = db;
+    try { if (user && typeof user.can === 'function' && (await user.can('data.write')) === false) canWrite = false; } catch (e) { /* optimistic */ }
+    ['btnAdd', 'btnImport'].forEach(function (id) { $(id).hidden = !canWrite; });
+    $('btnReset').hidden = !local;
+    db.collection('rows').onSnapshot(function (snap) {
+      rows = snap.docs.map(function (d) { var o = Object.assign({}, d.data() || {}); o.id = d.id; return o; });
+      loading = false;
+      setChip('ok', (local ? 'บันทึกในเบราว์เซอร์นี้' : 'ฐานข้อมูลร่วม') + ' · ' + fmt(rows.length) + ' แถว');
+      renderAll();
+    }, function () { loading = false; setChip('bad', 'อ่านข้อมูลไม่ได้'); renderAll(); });
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
